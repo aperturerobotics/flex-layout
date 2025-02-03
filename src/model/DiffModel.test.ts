@@ -178,12 +178,12 @@ describe("DiffModel", () => {
             const diffActions = diffModels(beforeJson, afterJson);
 
             // Apply the actions to diffModel.
-            const diffModel = Model.fromJson(beforeJson)
-            diffActions.forEach((action) => diffModel.doAction(action))
+            const diffModel = Model.fromJson(beforeJson);
+            diffActions.forEach((action) => diffModel.doAction(action));
 
             // Compare the resulting IJsonModel to the expected
-            const finalJson = diffModel.toJson()
-            expect(finalJson).toStrictEqual(afterJson)
+            const finalJson = diffModel.toJson();
+            expect(finalJson).toStrictEqual(afterJson);
         });
     });
 });
