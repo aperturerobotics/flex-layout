@@ -4,11 +4,9 @@ import { Rect } from "../Rect";
 export interface ISizeTrackerProps {
     rect: Rect;
     selected: boolean;
-    forceRevision: number;
-    tabsRevision: number;
     children: React.ReactNode;
 }
-// only render if size changed or forceRevision changed or tabsRevision changed
+// only render if size changed
 export const SizeTracker = React.memo(
     ({ children }: ISizeTrackerProps) => {
         return <>{children}</>;
@@ -16,9 +14,7 @@ export const SizeTracker = React.memo(
     (prevProps, nextProps) => {
         return (
             prevProps.rect.equalSize(nextProps.rect) &&
-            prevProps.selected === nextProps.selected &&
-            prevProps.forceRevision === nextProps.forceRevision &&
-            prevProps.tabsRevision === nextProps.tabsRevision
+            prevProps.selected === nextProps.selected
         );
     },
 );

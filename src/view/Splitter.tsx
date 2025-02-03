@@ -131,28 +131,25 @@ export const Splitter = (props: ISplitterProps) => {
         setDragging(false);
     };
 
-    const updateLayout = (realtime: boolean) => {
-        const redraw = () => {
-            if (outlineDiv.current) {
-                let value = 0;
-                if (node.getOrientation() === Orientation.VERT) {
-                    value = outlineDiv.current!.offsetTop;
-                } else {
-                    value = outlineDiv.current!.offsetLeft;
-                }
-
-                if (node instanceof BorderNode) {
-                    const pos = (node as BorderNode).calculateSplit(node, value);
-                    layout.doAction(Actions.adjustBorderSplit(node.getId(), pos));
-                } else {
-                    const init = initalSizes.current;
-                    const weights = node.calculateSplit(index, value, init.initialSizes, init.sum, init.startPosition);
-                    layout.doAction(Actions.adjustWeights(node.getId(), weights));
-                }
+    // TODO realtime?
+    const updateLayout = (_realtime: boolean) => {
+        if (outlineDiv.current) {
+            let value = 0;
+            if (node.getOrientation() === Orientation.VERT) {
+                value = outlineDiv.current!.offsetTop;
+            } else {
+                value = outlineDiv.current!.offsetLeft;
             }
-        };
 
-        redraw();
+            if (node instanceof BorderNode) {
+                const pos = (node as BorderNode).calculateSplit(node, value);
+                layout.doAction(Actions.adjustBorderSplit(node.getId(), pos));
+            } else {
+                const init = initalSizes.current;
+                const weights = node.calculateSplit(index, value, init.initialSizes, init.sum, init.startPosition);
+                layout.doAction(Actions.adjustWeights(node.getId(), weights));
+            }
+        }
     };
 
     const getBoundPosition = (p: number) => {

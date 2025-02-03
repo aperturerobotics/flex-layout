@@ -25,7 +25,6 @@ export function BorderTab(props: IBorderTabProps) {
             border.setOuterRect(outerRect);
             if (!border.getContentRect().equals(contentRect)) {
                 border.setContentRect(contentRect);
-                layout.redrawInternal("border content rect");
             }
         }
     });
