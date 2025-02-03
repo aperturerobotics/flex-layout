@@ -12,9 +12,6 @@ export const SizeTracker = React.memo(
         return <>{children}</>;
     },
     (prevProps, nextProps) => {
-        return (
-            prevProps.rect.equalSize(nextProps.rect) &&
-            prevProps.selected === nextProps.selected
-        );
+        return prevProps.rect.equalSize(nextProps.rect) && prevProps.selected === nextProps.selected;
     },
 );
