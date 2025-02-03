@@ -70,12 +70,7 @@ export function diffModels(sourceJson: IJsonModel, targetJson: IJsonModel): Acti
             const targetIndex = parentChildren.findIndex((child) => "id" in child && child.id === node.id);
 
             if (!sourceLocation) {
-                // New tab to add
                 const tabJson = { ...node };
-                // Ensure required properties are set
-                if (!tabJson.name) {
-                    tabJson.name = "[Unnamed Tab]";
-                }
                 actions.push(Actions.addNode(tabJson, parent.id, DockLocation.CENTER, targetIndex));
             } else if (sourceLocation.parentId !== parent.id || sourceLocation.index !== targetIndex) {
                 // Move if parent changed or index changed
