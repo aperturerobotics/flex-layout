@@ -44,6 +44,7 @@ export class TabSetNode extends Node implements IDraggable, IDropTarget {
 
         return newLayoutNode;
     }
+
     /** @internal */
     private static attributeDefinitions: AttributeDefinitions = TabSetNode.createAttributeDefinitions();
 
@@ -411,7 +412,7 @@ export class TabSetNode extends Node implements IDraggable, IDropTarget {
                 }
                 // console.log("added child at : " + insertPos);
             } else if (dragNode instanceof RowNode) {
-                (dragNode as RowNode).forEachNode((child, level) => {
+                (dragNode as RowNode).forEachNode((child, _level) => {
                     if (child instanceof TabNode) {
                         this.addChild(child, insertPos);
                         // console.log("added child at : " + insertPos);

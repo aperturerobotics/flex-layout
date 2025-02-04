@@ -7,6 +7,39 @@ import { IDraggable } from "./IDraggable";
 import { IJsonBorderNode, IJsonRowNode, IJsonTabNode, IJsonTabSetNode } from "./IJsonModel";
 import { Model } from "./Model";
 
+function hashString(str: string): string {
+    let hash = 0;
+    for (let i = 0; i < str.length; i++) {
+        const char = str.charCodeAt(i);
+        hash = ((hash << 5) - hash) + char;
+        hash = hash & hash; // Convert to 32bit integer
+    }
+    return Math.abs(hash).toString(36);
+}
+
+function getNodePath(node: Node | null): string[] {
+    const path: string[] = [];
+    while (node) {
+        path.unshift(node.getId());
+        path.unshift(node.getType());
+        node = node.getParent() || null;
+    }
+    return path;
+}
+
+export function generateNodeId(node: Node): string {
+    const parent = node.getParent() ?? null;
+    const pathParts = parent ? getNodePath(parent) : [];
+    pathParts.push(node.getType());
+
+    // Add index in parent's children
+    const index = parent ? parent.getChildren().indexOf(node) : 0;
+    pathParts.push(index.toString());
+
+    console.log('Generating ID for path:', pathParts.join('/'));
+    return '#' + hashString(pathParts.join('/'));
+}
+
 export abstract class Node {
     /** @internal */
     protected model: Model;
@@ -39,7 +72,7 @@ export abstract class Node {
             return id as string;
         }
 
-        id = this.model.nextUniqueId();
+        id = generateNodeId(this);
         this.setId(id);
 
         return id as string;

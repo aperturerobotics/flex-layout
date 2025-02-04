@@ -14,7 +14,6 @@ import { Node } from "./Node";
 import { RowNode } from "./RowNode";
 import { TabNode } from "./TabNode";
 import { TabSetNode } from "./TabSetNode";
-import { randomUUID } from "./Utils";
 import { LayoutWindow } from "./LayoutWindow";
 import { isOnScreen } from "../view/Utils";
 
@@ -132,7 +131,7 @@ export class Model {
                 if (node instanceof TabSetNode) {
                     const isMaximized = node.isMaximized();
                     const oldLayoutWindow = this.windows.get(node.getWindowId())!;
-                    const windowId = randomUUID();
+                    const windowId = node.getId()+"_window"
                     const layoutWindow = new LayoutWindow(windowId, oldLayoutWindow.toScreenRectFunction(node.getRect()));
                     const json = {
                         type: "row",
@@ -153,7 +152,7 @@ export class Model {
             case Actions.POPOUT_TAB: {
                 const node = this.idMap.get(action.data.node);
                 if (node instanceof TabNode) {
-                    const windowId = randomUUID();
+                    const windowId = node.getId() + "_window";
                     let r = Rect.empty();
                     if (node.getParent() instanceof TabSetNode) {
                         r = node.getParent()!.getRect();
@@ -162,7 +161,7 @@ export class Model {
                     }
                     const oldLayoutWindow = this.windows.get(node.getWindowId())!;
                     const layoutWindow = new LayoutWindow(windowId, oldLayoutWindow.toScreenRectFunction(r));
-                    const tabsetId = randomUUID();
+                    const tabsetId = windowId+"_tabset"
                     const json = {
                         type: "row",
                         children: [{ type: "tabset", id: tabsetId }],
@@ -181,7 +180,7 @@ export class Model {
                 const window = this.windows.get(action.data.windowId);
                 if (window) {
                     this.rootWindow.root?.drop(window?.root!, DockLocation.CENTER, -1);
-                    this.rootWindow.visitNodes((node, level) => {
+                    this.rootWindow.visitNodes((node, _level) => {
                         if (node instanceof RowNode) {
                             node.setWindowId(Model.MAIN_WINDOW_ID);
                         }
@@ -194,10 +193,11 @@ export class Model {
                 break;
             }
             case Actions.CREATE_WINDOW: {
-                const windowId = randomUUID();
+                const row = RowNode.fromJson(action.data.layout, this, this.rootWindow);
+                const windowId = row.getId() + "_window";
                 const layoutWindow = new LayoutWindow(windowId, Rect.fromJson(action.data.rect));
-                const row = RowNode.fromJson(action.data.layout, this, layoutWindow);
                 layoutWindow.root = row;
+                row.setWindowId(windowId);
                 this.windows.set(windowId, layoutWindow);
                 returnVal = windowId;
                 break;
@@ -589,11 +589,6 @@ export class Model {
     /** @internal */
     updateAttrs(json: any) {
         Model.attributeDefinitions.update(json, this.attributes);
-    }
-
-    /** @internal */
-    nextUniqueId() {
-        return "#" + randomUUID();
     }
 
     /** @internal */
