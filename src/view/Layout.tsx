@@ -88,11 +88,19 @@ export interface ILayoutProps {
 export class Layout extends React.Component<ILayoutProps> {
     /** @internal */
     private selfRef: React.RefObject<LayoutInternal | null>;
+    /** @internal */
+    private revision: number; // so LayoutInternal knows this is a parent render (used for optimization)
 
     /** @internal */
     constructor(props: ILayoutProps) {
         super(props);
         this.selfRef = React.createRef<LayoutInternal>();
+        this.revision = 0;
+    }
+
+    /** re-render the layout */
+    redraw() {
+        this.selfRef.current!.redraw("parent " + this.revision);
     }
 
     /**
@@ -154,12 +162,14 @@ export class Layout extends React.Component<ILayoutProps> {
 
     /** @internal */
     render() {
-        return <LayoutInternal ref={this.selfRef} {...this.props} />;
+        return <LayoutInternal ref={this.selfRef} {...this.props} renderRevision={this.revision++} />;
     }
 }
 
 /** @internal */
 interface ILayoutInternalProps extends ILayoutProps {
+    renderRevision: number;
+
     // used only for popout windows:
     windowId?: string;
     mainLayout?: LayoutInternal;
@@ -173,6 +183,8 @@ interface ILayoutInternalState {
     showEdges: boolean;
     showOverlay: boolean;
     calculatedBorderBarSize: number;
+    layoutRevision: number;
+    forceRevision: number;
     showHiddenBorder: DockLocation;
 }
 
@@ -233,6 +245,8 @@ export class LayoutInternal extends React.Component<ILayoutInternalProps, ILayou
             showEdges: false,
             showOverlay: false,
             calculatedBorderBarSize: 29,
+            layoutRevision: 0,
+            forceRevision: 0,
             showHiddenBorder: DockLocation.CENTER,
         };
 
@@ -274,7 +288,7 @@ export class LayoutInternal extends React.Component<ILayoutInternalProps, ILayou
             this.styleObserver = new MutationObserver(() => {
                 const changed = copyInlineStyles(sourceElement, targetElement);
                 if (changed) {
-                    this.forceUpdate();
+                    this.redraw("mutation observer");
                 }
             });
 
@@ -287,7 +301,7 @@ export class LayoutInternal extends React.Component<ILayoutInternalProps, ILayou
             for (const [_, layoutWindow] of this.props.model.getwindowsMap()) {
                 const layout = layoutWindow.layout;
                 if (layout) {
-                    this.forceUpdate();
+                    this.redraw("visibility change");
                 }
             }
         });
@@ -565,10 +579,11 @@ export class LayoutInternal extends React.Component<ILayoutInternalProps, ILayou
                 const renderTab = child.isRendered() || ((selected || !child.isEnableRenderOnDemand()) && rect.width > 0 && rect.height > 0);
 
                 if (renderTab) {
+                    //  console.log("rendertab", child.getName(), this.props.renderRevision);
                     const key = child.getId() + (child.isEnableWindowReMount() ? child.getWindowId() : "");
                     tabMoveables.push(
                         createPortal(
-                            <SizeTracker rect={rect} selected={child.isSelected()} key={key}>
+                            <SizeTracker rect={rect} selected={child.isSelected()} forceRevision={this.state.forceRevision} tabsRevision={this.props.renderRevision} key={key}>
                                 <ErrorBoundary message={this.i18nName(I18nLabel.Error_rendering_component)}>{this.props.factory(child)}</ErrorBoundary>
                             </SizeTracker>,
                             element,
@@ -720,11 +735,25 @@ export class LayoutInternal extends React.Component<ILayoutInternalProps, ILayou
     }
 
     onModelChange = (action: Action) => {
-        this.forceUpdate();
+        this.redrawInternal("model change");
         if (this.props.onModelChange) {
             this.props.onModelChange(this.props.model, action);
         }
     };
+
+    redraw(_type?: string) {
+        // console.log("redraw", this.windowId, type);
+        this.mainLayout.setState((state, _props) => {
+            return { forceRevision: state.forceRevision + 1 };
+        });
+    }
+
+    redrawInternal(_type: string) {
+        // console.log("redrawInternal", this.windowId, type);
+        this.mainLayout.setState((state, _props) => {
+            return { layoutRevision: state.layoutRevision + 1 };
+        });
+    }
 
     doAction(action: Action): Node | undefined {
         if (this.props.onAction !== undefined) {
@@ -743,6 +772,9 @@ export class LayoutInternal extends React.Component<ILayoutInternalProps, ILayou
         if (!rect.equals(this.state.rect) && rect.width !== 0 && rect.height !== 0) {
             // console.log("updateRect", rect.floor());
             this.setState({ rect });
+            if (this.windowId !== Model.MAIN_WINDOW_ID) {
+                this.redrawInternal("rect updated");
+            }
         }
     };
 

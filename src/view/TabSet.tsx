@@ -43,6 +43,7 @@ export const TabSet = (props: ITabSetProps) => {
         const newContentRect = Rect.getContentRect(contentRef.current!).relativeTo(layout.getDomRect()!);
         if (!node.getContentRect().equals(newContentRect)) {
             node.setContentRect(newContentRect);
+            layout.redrawInternal("tabset content rect " + newContentRect);
         }
     });
 
