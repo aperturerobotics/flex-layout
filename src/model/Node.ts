@@ -73,6 +73,9 @@ export abstract class Node {
         }
 
         id = generateNodeId(this);
+        while (this.model.getNodeById(id) != null) {
+            id = "#" + hashString(id)
+        }
         this.setId(id);
 
         return id as string;
