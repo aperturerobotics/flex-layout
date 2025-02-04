@@ -22,8 +22,13 @@ import { IJsonModel } from "./IJsonModel";
 export function diffModels(sourceJson: IJsonModel, targetJson: IJsonModel): Action[] {
     const actions: Action[] = [];
 
-    // Track source tab locations and process target model in a single pass
-    const sourceTabs = new Map<string, { parentId: string; index: number }>();
+    // Track source tab locations and attributes
+    const sourceTabs = new Map<string, { 
+        parentId: string; 
+        index: number;
+        name?: string;
+        config?: any;
+    }>();
     const targetTabs = new Set<string>();
 
     // Build source tab index and generate add/move actions for target
@@ -32,7 +37,12 @@ export function diffModels(sourceJson: IJsonModel, targetJson: IJsonModel): Acti
             if (isSource && parent && "id" in parent && parent.id) {
                 const parentChildren = "children" in parent ? parent.children : [];
                 const index = parentChildren.findIndex((child) => "id" in child && child.id === node.id);
-                sourceTabs.set(node.id, { parentId: parent.id, index });
+                sourceTabs.set(node.id, { 
+                    parentId: parent.id, 
+                    index,
+                    name: node.name,
+                    config: node.config
+                });
             } else if (!isSource && parent && "id" in parent && parent.id) {
                 targetTabs.add(node.id);
                 const parentChildren = "children" in parent ? parent.children : [];
@@ -40,11 +50,23 @@ export function diffModels(sourceJson: IJsonModel, targetJson: IJsonModel): Acti
                 const sourceLocation = sourceTabs.get(node.id);
 
                 if (!sourceLocation) {
-                    // New tab to add
+                    // New tab to add 
                     actions.push(Actions.addNode(node, parent.id, DockLocation.CENTER, targetIndex));
-                } else if (sourceLocation.parentId !== parent.id || sourceLocation.index !== targetIndex) {
-                    // Tab moved
-                    actions.push(Actions.moveNode(node.id, parent.id, DockLocation.CENTER, targetIndex));
+                } else {
+                    // Check if tab needs to be moved or updated
+                    if (sourceLocation.parentId !== parent.id || sourceLocation.index !== targetIndex) {
+                        actions.push(Actions.moveNode(node.id, parent.id, DockLocation.CENTER, targetIndex));
+                    }
+                    
+                    // Check if name changed
+                    if (sourceLocation.name !== node.name) {
+                        actions.push(Actions.renameTab(node.id, node.name));
+                    }
+
+                    // Check if config changed
+                    if (JSON.stringify(sourceLocation.config) !== JSON.stringify(node.config)) {
+                        actions.push(Actions.updateNodeAttributes(node.id, {config: node.config}));
+                    }
                 }
             }
         }
