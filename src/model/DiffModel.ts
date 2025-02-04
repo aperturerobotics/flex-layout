@@ -5,10 +5,19 @@ import { DockLocation } from "../DockLocation";
 import { IJsonModel } from "./IJsonModel";
 
 /**
- * Generates a sequence of Actions that will transform sourceModel into targetModel
- * @param sourceModel The starting model
- * @param targetModel The desired end model
- * @returns Array of Actions that will transform sourceModel into targetModel
+ * Generates a sequence of Actions that will transform sourceModel into targetModel.
+ * This is used to determine what actions need to be taken to transform one model state into another.
+ * 
+ * The function works by:
+ * 1. Building an index of all tabs in the source model with their locations
+ * 2. Processing the target model to generate add/move actions for tabs in new positions
+ * 3. Generating delete actions for tabs that exist in source but not target
+ * 
+ * Borders are processed first since they have special handling, then the main layout is walked.
+ * 
+ * @param sourceModel The starting model state
+ * @param targetModel The desired end model state 
+ * @returns Array of Actions that will transform sourceModel into targetModel when applied in order
  */
 export function diffModels(sourceJson: IJsonModel, targetJson: IJsonModel): Action[] {
     const actions: Action[] = [];

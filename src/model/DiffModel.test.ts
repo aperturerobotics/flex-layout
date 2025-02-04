@@ -6,6 +6,26 @@ import { Action } from "./Action";
 import { IJsonModel } from "./IJsonModel";
 import { DockLocation } from "../DockLocation";
 
+/**
+ * DiffModel is developed iteratively using Test Driven Development (TDD).
+ *
+ * For each new test case:
+ * 1. Define the initial model state using setupActions
+ * 2. Define the expected transformation using testActions
+ * 3. Verify diffModels generates equivalent (or better) action sequence
+ * 4. Refactor diffModels if needed to generate more efficient sequences
+ *
+ * This approach helps ensure diffModels:
+ * - Handles all valid model transformations
+ * - Generates minimal action sequences
+ * - Maintains model consistency
+ * - Has good test coverage of edge cases
+ */
+
+/**
+ * Base model used as the starting point for test cases.
+ * Contains a minimal layout with a single empty tabset.
+ */
 const BASE_MODEL: IJsonModel = {
     global: {},
     layout: {
@@ -21,12 +41,26 @@ const BASE_MODEL: IJsonModel = {
     },
 };
 
+/**
+ * Defines the structure of a test case for diffModel testing
+ */
 interface TestCase {
+    /** Descriptive name of the test case */
     name: string;
+    /** Actions to apply to BASE_MODEL to create the "before" state */
     setupActions: Action[];
+    /** Actions to apply to create the "after" state - these should match what diffModels generates */
     testActions: Action[];
 }
 
+/**
+ * Test cases for diffModels function.
+ * Each test case:
+ * 1. Starts with BASE_MODEL
+ * 2. Applies setupActions to create "before" state
+ * 3. Applies testActions to create "after" state
+ * 4. Verifies diffModels generates equivalent actions to testActions
+ */
 const testCases: TestCase[] = [
     {
         name: "identical models generate no actions",
@@ -158,6 +192,7 @@ const testCases: TestCase[] = [
 describe("DiffModel", () => {
     testCases.forEach((testCase) => {
         test(testCase.name, () => {
+            // Create the "before" state by applying setup actions to base model
             // Create models and apply actions to get before/after states
             const beforeModel = Model.fromJson(BASE_MODEL);
             testCase.setupActions.forEach((action) => beforeModel.doAction(action));
