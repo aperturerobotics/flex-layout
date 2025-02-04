@@ -282,8 +282,10 @@ export class Model {
             }
 
             case Actions.UPDATE_NODE_ATTRIBUTES: {
-                const node = this.idMap.get(action.data.node)!;
-                node.updateAttrs(action.data.json);
+                const node = this.idMap.get(action.data.node);
+                if (node) {
+                    node.updateAttrs(action.data.json);
+                }
                 break;
             }
             default:

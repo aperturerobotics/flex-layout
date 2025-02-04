@@ -187,6 +187,113 @@ const testCases: TestCase[] = [
             ),
         ],
     },
+    {
+        name: "tab name changes",
+        setupActions: [
+            Actions.addNode(
+                {
+                    type: "tab",
+                    id: "tab1",
+                    name: "Tab 1",
+                    component: "grid",
+                },
+                "tabset1",
+                DockLocation.CENTER,
+                0,
+            ),
+        ],
+        testActions: [
+            Actions.renameTab("tab1", "New Tab Name"),
+        ],
+    },
+    {
+        name: "tab config changes",
+        setupActions: [
+            Actions.addNode(
+                {
+                    type: "tab",
+                    id: "tab1",
+                    name: "Tab 1",
+                    component: "grid",
+                    config: { foo: "bar" },
+                },
+                "tabset1",
+                DockLocation.CENTER,
+                0,
+            ),
+        ],
+        testActions: [
+            Actions.updateNodeAttributes("tab1", { config: { foo: "baz" } }),
+        ],
+    },
+    {
+        name: "tabset selected changes",
+        setupActions: [
+            Actions.addNode(
+                {
+                    type: "tab",
+                    id: "tab1",
+                    name: "Tab 1",
+                    component: "grid",
+                },
+                "tabset1",
+                DockLocation.CENTER,
+                0,
+            ),
+            Actions.addNode(
+                {
+                    type: "tab",
+                    id: "tab2", 
+                    name: "Tab 2",
+                    component: "grid",
+                },
+                "tabset1",
+                DockLocation.CENTER,
+                1,
+            ),
+        ],
+        testActions: [
+            Actions.updateNodeAttributes("tabset1", { selected: 1 }),
+        ],
+    },
+    {
+        name: "tabset maximized changes",
+        setupActions: [
+            Actions.addNode(
+                {
+                    type: "tab",
+                    id: "tab1",
+                    name: "Tab 1",
+                    component: "grid",
+                },
+                "tabset1",
+                DockLocation.CENTER,
+                0,
+            ),
+        ],
+        testActions: [
+            Actions.maximizeToggle("tabset1"),
+        ],
+    },
+    {
+        name: "tabset active changes",
+        setupActions: [
+            Actions.addNode(
+                {
+                    type: "tab",
+                    id: "tab1",
+                    name: "Tab 1",
+                    component: "grid",
+                },
+                "tabset1",
+                DockLocation.CENTER,
+                0,
+            ),
+        ],
+        testActions: [
+            Actions.setActiveTabset("tabset1"),
+        ],
+    },
 ];
 
 describe("DiffModel", () => {

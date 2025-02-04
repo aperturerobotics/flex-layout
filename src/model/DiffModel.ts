@@ -22,14 +22,18 @@ import { IJsonModel } from "./IJsonModel";
 export function diffModels(sourceJson: IJsonModel, targetJson: IJsonModel): Action[] {
     const actions: Action[] = [];
 
-    // Track source tab locations and attributes
-    const sourceTabs = new Map<string, { 
-        parentId: string; 
+    // Track source node locations and attributes
+    const sourceNodes = new Map<string, {
+        parentId: string;
         index: number;
         name?: string;
         config?: any;
+        type: string;
+        selected?: number;
+        maximized?: boolean;
+        active?: boolean;
     }>();
-    const targetTabs = new Set<string>();
+    const targetNodes = new Set<string>();
 
     // Build source tab index and generate add/move actions for target
     const processNode = (node: JsonNode, parent: JsonNode | null, isSource: boolean) => {
@@ -37,35 +41,67 @@ export function diffModels(sourceJson: IJsonModel, targetJson: IJsonModel): Acti
             if (isSource && parent && "id" in parent && parent.id) {
                 const parentChildren = "children" in parent ? parent.children : [];
                 const index = parentChildren.findIndex((child) => "id" in child && child.id === node.id);
-                sourceTabs.set(node.id, { 
-                    parentId: parent.id, 
+                sourceNodes.set(node.id, {
+                    parentId: parent.id,
                     index,
                     name: node.name,
-                    config: node.config
+                    config: node.config,
+                    type: node.type,
+                    selected: node.type === "tabset" ? node.selected : undefined,
+                    maximized: node.type === "tabset" ? node.maximized : undefined,
+                    active: node.type === "tabset" ? node.active : undefined
                 });
             } else if (!isSource && parent && "id" in parent && parent.id) {
-                targetTabs.add(node.id);
+                targetNodes.add(node.id);
                 const parentChildren = "children" in parent ? parent.children : [];
                 const targetIndex = parentChildren.findIndex((child) => "id" in child && child.id === node.id);
-                const sourceLocation = sourceTabs.get(node.id);
+                const sourceLocation = sourceNodes.get(node.id);
 
                 if (!sourceLocation) {
-                    // New tab to add 
+                    // New node to add
                     actions.push(Actions.addNode(node, parent.id, DockLocation.CENTER, targetIndex));
                 } else {
-                    // Check if tab needs to be moved or updated
+                    // Check if node needs to be moved or updated
                     if (sourceLocation.parentId !== parent.id || sourceLocation.index !== targetIndex) {
                         actions.push(Actions.moveNode(node.id, parent.id, DockLocation.CENTER, targetIndex));
                     }
-                    
-                    // Check if name changed
-                    if (sourceLocation.name !== node.name) {
-                        actions.push(Actions.renameTab(node.id, node.name));
+
+                    if (node.type === "tab") {
+                        // Check if tab name changed
+                        if (sourceLocation.name !== node.name) {
+                            actions.push(Actions.renameTab(node.id, node.name));
+                        }
                     }
 
-                    // Check if config changed
+                    // Check if config changed for any node type
                     if (JSON.stringify(sourceLocation.config) !== JSON.stringify(node.config)) {
-                        actions.push(Actions.updateNodeAttributes(node.id, {config: node.config}));
+                        // Need to include type to ensure proper attribute handling
+                        actions.push(Actions.updateNodeAttributes(node.id, {
+                            type: node.type,
+                            config: node.config
+                        }));
+                    }
+
+                    // Handle tabset specific changes
+                    if (node.type === "tabset") {
+                        // Check if selected tab changed
+                        if (sourceLocation.selected !== node.selected) {
+                            actions.push(Actions.updateNodeAttributes(node.id, {selected: node.selected}));
+                        }
+
+                        // Check if maximized state changed
+                        if (sourceLocation.maximized !== node.maximized) {
+                            if (node.maximized) {
+                                actions.push(Actions.maximizeToggle(node.id));
+                            }
+                        }
+
+                        // Check if active state changed
+                        if (sourceLocation.active !== node.active) {
+                            if (node.active) {
+                                actions.push(Actions.setActiveTabset(node.id));
+                            }
+                        }
                     }
                 }
             }
@@ -112,10 +148,14 @@ export function diffModels(sourceJson: IJsonModel, targetJson: IJsonModel): Acti
     // Process target model to generate actions
     walkJsonModel(targetJson, (node, parent) => processNode(node, parent, false));
 
-    // Generate delete actions for tabs that only exist in source
-    for (const [tabId] of sourceTabs) {
-        if (!targetTabs.has(tabId)) {
-            actions.push(Actions.deleteTab(tabId));
+    // Generate delete actions for nodes that only exist in source
+    for (const [nodeId, sourceNode] of sourceNodes) {
+        if (!targetNodes.has(nodeId)) {
+            if (sourceNode.type === "tab") {
+                actions.push(Actions.deleteTab(nodeId));
+            } else if (sourceNode.type === "tabset") {
+                actions.push(Actions.deleteTabset(nodeId));
+            }
         }
     }
 
