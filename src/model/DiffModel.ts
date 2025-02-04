@@ -61,9 +61,6 @@ export function diffModels(sourceJson: IJsonModel, targetJson: IJsonModel): Acti
                     name: node.name,
                     config: node.config,
                     type: node.type,
-                    selected: node.type === "tabset" ? node.selected : undefined,
-                    maximized: node.type === "tabset" ? node.maximized : undefined,
-                    active: node.type === "tabset" ? node.active : undefined
                 });
             } else if (!isSource && parent && "id" in parent && parent.id) {
                 targetNodes.add(node.id);
@@ -80,7 +77,7 @@ export function diffModels(sourceJson: IJsonModel, targetJson: IJsonModel): Acti
                         actions.push(Actions.moveNode(node.id, parent.id, DockLocation.CENTER, targetIndex));
                     }
 
-                    if (node.type === "tab") {
+                    if (node.type === "tab" && node.name != null) {
                         // Check if tab name changed
                         if (sourceLocation.name !== node.name) {
                             actions.push(Actions.renameTab(node.id, node.name));
@@ -94,42 +91,6 @@ export function diffModels(sourceJson: IJsonModel, targetJson: IJsonModel): Acti
                             type: node.type,
                             config: node.config
                         }));
-                    }
-
-                    // Handle node-specific changes
-                    if (node.type === "tabset") {
-                        // Handle tabset specific attributes
-                        const tabsetAttrs: Record<string, any> = {};
-                        if (sourceLocation.selected !== node.selected) tabsetAttrs.selected = node.selected;
-                        if (sourceLocation.weight !== node.weight) tabsetAttrs.weight = node.weight;
-                        if (sourceLocation.enableDrop !== node.enableDrop) tabsetAttrs.enableDrop = node.enableDrop;
-                        if (sourceLocation.enableDivide !== node.enableDivide) tabsetAttrs.enableDivide = node.enableDivide;
-                        if (sourceLocation.enableClose !== node.enableClose) tabsetAttrs.enableClose = node.enableClose;
-                        if (sourceLocation.enableDrag !== node.enableDrag) tabsetAttrs.enableDrag = node.enableDrag;
-                        if (sourceLocation.enableSingleTabStretch !== node.enableSingleTabStretch) tabsetAttrs.enableSingleTabStretch = node.enableSingleTabStretch;
-                        if (sourceLocation.enableTabStrip !== node.enableTabStrip) tabsetAttrs.enableTabStrip = node.enableTabStrip;
-                        if (sourceLocation.classNameTabStrip !== node.classNameTabStrip) tabsetAttrs.classNameTabStrip = node.classNameTabStrip;
-                        if (sourceLocation.tabLocation !== node.tabLocation) tabsetAttrs.tabLocation = node.tabLocation;
-                        if (sourceLocation.autoSelectTab !== node.autoSelectTab) tabsetAttrs.autoSelectTab = node.autoSelectTab;
-                        if (sourceLocation.minSize !== node.minSize) tabsetAttrs.minSize = node.minSize;
-                        if (sourceLocation.maxSize !== node.maxSize) tabsetAttrs.maxSize = node.maxSize;
-
-                        if (Object.keys(tabsetAttrs).length > 0) {
-                            actions.push(Actions.updateNodeAttributes(node.id, tabsetAttrs));
-                        }
-
-                        if (sourceLocation.maximized !== node.maximized && node.maximized) {
-                            actions.push(Actions.maximizeToggle(node.id));
-                        }
-                        if (sourceLocation.active !== node.active && node.active) {
-                            actions.push(Actions.setActiveTabset(node.id));
-                        }
-                    } else if (node.type === "row") {
-                        const rowAttrs: Record<string, any> = {};
-                        if (sourceLocation.weight !== node.weight) rowAttrs.weight = node.weight;
-                        if (Object.keys(rowAttrs).length > 0) {
-                            actions.push(Actions.updateNodeAttributes(node.id, rowAttrs));
-                        }
                     }
                 }
             }
@@ -188,6 +149,56 @@ export function diffModels(sourceJson: IJsonModel, targetJson: IJsonModel): Acti
 
     // Process target model to generate actions
     walkJsonModel(targetJson, (node, parent) => processNode(node, parent, false));
+
+    // Handle window changes
+    const sourceWindows = new Set(Object.keys(sourceJson.popouts || {}));
+    const targetWindows = new Set(Object.keys(targetJson.popouts || {}));
+
+    // Handle window deletions
+    for (const windowId of sourceWindows) {
+        if (!targetWindows.has(windowId)) {
+            // When closing a window, first move any tabs back to main window's first tabset
+            const sourceWindow = sourceJson.popouts![windowId];
+            const sourceLayout = sourceWindow.layout;
+            const targetTabsetId = targetJson.layout.children[0].id;
+
+            // Move all tabs from source window to target tabset
+            const tabsToMove = new Set<string>();
+            walkJsonModel(sourceLayout, (node) => {
+                if (node.type === "tab" && "id" in node && node.id) {
+                    tabsToMove.add(node.id);
+                }
+            });
+
+            // Close the window after moving tabs
+            actions.push(Actions.closeWindow(windowId));
+
+            // Update target tabset attributes
+            if (tabsToMove.size === 0) {
+                actions.push(Actions.updateNodeAttributes(targetTabsetId!, {
+                    selected: -1,
+                    children: []
+                }));
+            }
+        }
+    }
+
+    // Handle window creations and updates
+    for (const windowId of targetWindows) {
+        const targetWindow = targetJson.popouts![windowId];
+        if (!sourceWindows.has(windowId)) {
+            // New window
+            actions.push(Actions.createWindow(targetWindow.layout, targetWindow.rect));
+        } else {
+            // Existing window - check for layout changes
+            const sourceWindow = sourceJson.popouts![windowId];
+            if (JSON.stringify(sourceWindow.layout) !== JSON.stringify(targetWindow.layout) ||
+                JSON.stringify(sourceWindow.rect) !== JSON.stringify(targetWindow.rect)) {
+                actions.push(Actions.closeWindow(windowId));
+                actions.push(Actions.createWindow(targetWindow.layout, targetWindow.rect));
+            }
+        }
+    }
 
     // Generate delete actions for nodes that only exist in source
     for (const [nodeId, sourceNode] of sourceNodes) {

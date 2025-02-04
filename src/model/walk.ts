@@ -51,19 +51,25 @@ export function findJsonNodeById(model: IJsonModel, id: string): JsonNode | unde
  *               - Return nothing or true to continue normally
  *               The visitor receives the current node and its parent (null for top-level nodes).
  */
-export function walkJsonModel(model: IJsonModel, visitor: ModelVisitor): void {
+export function walkJsonModel(model: IJsonModel | JsonNode, visitor: ModelVisitor): void {
     // Stack of nodes to visit and their parents
-    const stack: Array<[IJsonBorderNode | IJsonRowNode | IJsonTabSetNode | IJsonTabNode, IJsonBorderNode | IJsonRowNode | IJsonTabSetNode | null]> = [];
+    const stack: Array<[JsonNode, JsonNode | null]> = [];
 
-    // Add borders if they exist
-    if (model.borders) {
-        for (const border of model.borders) {
-            stack.push([border, null]);
+    if ('layout' in model) {
+        // Model is IJsonModel
+        // Add borders if they exist
+        if (model.borders) {
+            for (const border of model.borders) {
+                stack.push([border, null]);
+            }
         }
-    }
 
-    // Add root layout
-    stack.push([model.layout, null]);
+        // Add root layout
+        stack.push([model.layout, null]);
+    } else {
+        // Model is JsonNode
+        stack.push([model, null]);
+    }
 
     // Process stack
     while (stack.length > 0) {

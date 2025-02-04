@@ -328,4 +328,111 @@ describe("DiffModel", () => {
             expect(finalJson).toStrictEqual(afterJson);
         });
     });
+
+    test("handles window creation", () => {
+        const beforeModel = Model.fromJson(BASE_MODEL);
+        const beforeJson = beforeModel.toJson();
+
+        const afterModel = Model.fromJson(BASE_MODEL);
+        afterModel.doAction(Actions.createWindow({
+            type: "row",
+            children: [{
+                type: "tabset",
+                children: [{
+                    type: "tab",
+                    name: "Window Tab",
+                    component: "grid"
+                }]
+            }]
+        }, {
+            x: 100,
+            y: 100,
+            width: 400,
+            height: 300
+        }));
+        const afterJson = afterModel.toJson();
+
+        const diffActions = diffModels(beforeJson, afterJson);
+        const diffModel = Model.fromJson(beforeJson);
+        diffActions.forEach(action => diffModel.doAction(action));
+        expect(diffModel.toJson()).toStrictEqual(afterJson);
+    });
+
+    test("handles window deletion", () => {
+        // Create model with a window
+        const beforeModel = Model.fromJson(BASE_MODEL);
+        beforeModel.doAction(Actions.createWindow({
+            type: "row",
+            children: [{
+                type: "tabset",
+                children: [{
+                    type: "tab",
+                    name: "Window Tab",
+                    component: "grid"
+                }]
+            }]
+        }, {
+            x: 100,
+            y: 100,
+            width: 400,
+            height: 300
+        }));
+        const beforeJson = beforeModel.toJson();
+
+        // Create model without the window
+        const afterModel = Model.fromJson(BASE_MODEL);
+        const afterJson = afterModel.toJson();
+
+        const diffActions = diffModels(beforeJson, afterJson);
+        const diffModel = Model.fromJson(beforeJson);
+        diffActions.forEach(action => diffModel.doAction(action));
+        expect(diffModel.toJson()).toStrictEqual(afterJson);
+    });
+
+    test("handles window updates", () => {
+        // Create model with initial window
+        const beforeModel = Model.fromJson(BASE_MODEL);
+        beforeModel.doAction(Actions.createWindow({
+            type: "row",
+            children: [{
+                type: "tabset",
+                children: [{
+                    type: "tab",
+                    name: "Window Tab",
+                    component: "grid"
+                }]
+            }]
+        }, {
+            x: 100,
+            y: 100,
+            width: 400,
+            height: 300
+        }));
+        const beforeJson = beforeModel.toJson();
+
+        // Create model with modified window
+        const afterModel = Model.fromJson(BASE_MODEL);
+        afterModel.doAction(Actions.createWindow({
+            type: "row",
+            children: [{
+                type: "tabset",
+                children: [{
+                    type: "tab",
+                    name: "Updated Window Tab",
+                    component: "grid"
+                }]
+            }]
+        }, {
+            x: 200,
+            y: 200,
+            width: 500,
+            height: 400
+        }));
+        const afterJson = afterModel.toJson();
+
+        const diffActions = diffModels(beforeJson, afterJson);
+        const diffModel = Model.fromJson(beforeJson);
+        diffActions.forEach(action => diffModel.doAction(action));
+        expect(diffModel.toJson()).toStrictEqual(afterJson);
+    });
 });
