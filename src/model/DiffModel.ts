@@ -32,6 +32,20 @@ export function diffModels(sourceJson: IJsonModel, targetJson: IJsonModel): Acti
         selected?: number;
         maximized?: boolean;
         active?: boolean;
+        show?: boolean;
+        size?: number;
+        weight?: number;
+        minSize?: number;
+        maxSize?: number;
+        enableDrop?: boolean;
+        enableDivide?: boolean;
+        enableClose?: boolean;
+        enableDrag?: boolean;
+        enableSingleTabStretch?: boolean;
+        enableTabStrip?: boolean;
+        classNameTabStrip?: string;
+        tabLocation?: string;
+        autoSelectTab?: boolean;
     }>();
     const targetNodes = new Set<string>();
 
@@ -82,25 +96,39 @@ export function diffModels(sourceJson: IJsonModel, targetJson: IJsonModel): Acti
                         }));
                     }
 
-                    // Handle tabset specific changes
+                    // Handle node-specific changes
                     if (node.type === "tabset") {
-                        // Check if selected tab changed
-                        if (sourceLocation.selected !== node.selected) {
-                            actions.push(Actions.updateNodeAttributes(node.id, {selected: node.selected}));
+                        // Handle tabset specific attributes
+                        const tabsetAttrs: Record<string, any> = {};
+                        if (sourceLocation.selected !== node.selected) tabsetAttrs.selected = node.selected;
+                        if (sourceLocation.weight !== node.weight) tabsetAttrs.weight = node.weight;
+                        if (sourceLocation.enableDrop !== node.enableDrop) tabsetAttrs.enableDrop = node.enableDrop;
+                        if (sourceLocation.enableDivide !== node.enableDivide) tabsetAttrs.enableDivide = node.enableDivide;
+                        if (sourceLocation.enableClose !== node.enableClose) tabsetAttrs.enableClose = node.enableClose;
+                        if (sourceLocation.enableDrag !== node.enableDrag) tabsetAttrs.enableDrag = node.enableDrag;
+                        if (sourceLocation.enableSingleTabStretch !== node.enableSingleTabStretch) tabsetAttrs.enableSingleTabStretch = node.enableSingleTabStretch;
+                        if (sourceLocation.enableTabStrip !== node.enableTabStrip) tabsetAttrs.enableTabStrip = node.enableTabStrip;
+                        if (sourceLocation.classNameTabStrip !== node.classNameTabStrip) tabsetAttrs.classNameTabStrip = node.classNameTabStrip;
+                        if (sourceLocation.tabLocation !== node.tabLocation) tabsetAttrs.tabLocation = node.tabLocation;
+                        if (sourceLocation.autoSelectTab !== node.autoSelectTab) tabsetAttrs.autoSelectTab = node.autoSelectTab;
+                        if (sourceLocation.minSize !== node.minSize) tabsetAttrs.minSize = node.minSize;
+                        if (sourceLocation.maxSize !== node.maxSize) tabsetAttrs.maxSize = node.maxSize;
+
+                        if (Object.keys(tabsetAttrs).length > 0) {
+                            actions.push(Actions.updateNodeAttributes(node.id, tabsetAttrs));
                         }
 
-                        // Check if maximized state changed
-                        if (sourceLocation.maximized !== node.maximized) {
-                            if (node.maximized) {
-                                actions.push(Actions.maximizeToggle(node.id));
-                            }
+                        if (sourceLocation.maximized !== node.maximized && node.maximized) {
+                            actions.push(Actions.maximizeToggle(node.id));
                         }
-
-                        // Check if active state changed
-                        if (sourceLocation.active !== node.active) {
-                            if (node.active) {
-                                actions.push(Actions.setActiveTabset(node.id));
-                            }
+                        if (sourceLocation.active !== node.active && node.active) {
+                            actions.push(Actions.setActiveTabset(node.id));
+                        }
+                    } else if (node.type === "row") {
+                        const rowAttrs: Record<string, any> = {};
+                        if (sourceLocation.weight !== node.weight) rowAttrs.weight = node.weight;
+                        if (Object.keys(rowAttrs).length > 0) {
+                            actions.push(Actions.updateNodeAttributes(node.id, rowAttrs));
                         }
                     }
                 }
@@ -108,15 +136,20 @@ export function diffModels(sourceJson: IJsonModel, targetJson: IJsonModel): Acti
         }
     };
 
-    // Process borders first
+    // Process borders first since they have special handling
     if (sourceJson.borders) {
         for (const border of sourceJson.borders) {
             if (border.children) {
                 border.children.forEach((tab, index) => {
                     if ("id" in tab && tab.id) {
-                        sourceTabs.set(tab.id, {
+                        sourceNodes.set(tab.id, {
                             parentId: `border_${border.location}`,
                             index,
+                            type: tab.type,
+                            name: tab.name,
+                            config: tab.config,
+                            show: border.show,
+                            size: border.size
                         });
                     }
                 });
@@ -129,12 +162,20 @@ export function diffModels(sourceJson: IJsonModel, targetJson: IJsonModel): Acti
             if (border.children) {
                 border.children.forEach((tab, targetIndex) => {
                     if ("id" in tab && tab.id) {
-                        targetTabs.add(tab.id);
-                        const sourceLocation = sourceTabs.get(tab.id);
+                        targetNodes.add(tab.id);
+                        const sourceLocation = sourceNodes.get(tab.id);
                         if (!sourceLocation) {
                             actions.push(Actions.addNode(tab, `border_${border.location}`, DockLocation.CENTER, targetIndex));
-                        } else if (sourceLocation.parentId !== `border_${border.location}` || sourceLocation.index !== targetIndex) {
-                            actions.push(Actions.moveNode(tab.id, `border_${border.location}`, DockLocation.CENTER, targetIndex));
+                        } else {
+                            if (sourceLocation.parentId !== `border_${border.location}` || sourceLocation.index !== targetIndex) {
+                                actions.push(Actions.moveNode(tab.id, `border_${border.location}`, DockLocation.CENTER, targetIndex));
+                            }
+                            if (sourceLocation.show !== border.show || sourceLocation.size !== border.size) {
+                                actions.push(Actions.updateNodeAttributes(`border_${border.location}`, {
+                                    show: border.show,
+                                    size: border.size
+                                }));
+                            }
                         }
                     }
                 });
