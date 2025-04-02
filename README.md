@@ -38,6 +38,19 @@ Features:
 *   component state is preserved when tabs are moved
 *	typescript type declarations
 
+## Demo
+
+To demo and test this library, clone this repo, then:
+
+```
+npm i -g yarn
+yarn
+yarn test:browser
+```
+
+Your browser will open to show + all the tests with vitest Browser Mode.
+
+
 ## Installation
 
 FlexLayout is in the npm repository. install using:
