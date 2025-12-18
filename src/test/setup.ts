@@ -1,5 +1,7 @@
 // Global test setup for vitest browser tests
 // Mocks localStorage for tests that use state persistence
+// Import CSS for proper layout measurement in browser tests
+import "../../style/light.css";
 
 const localStorageMock = (() => {
     let store: Record<string, string> = {};

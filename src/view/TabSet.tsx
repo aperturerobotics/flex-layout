@@ -45,10 +45,15 @@ export const TabSet = (props: ITabSetProps) => {
         }
 
         const newContentRect = Rect.getContentRect(contentRef.current!).relativeTo(layout.getDomRect()!);
-        if (!node.getContentRect().equals(newContentRect)) {
+        const oldContentRect = node.getContentRect();
+        if (!oldContentRect.equals(newContentRect)) {
             node.setContentRect(newContentRect);
-            // Only trigger redraw after first render to avoid infinite loops during initial mount
-            if (!isFirstRender.current) {
+            // Trigger redraw when content rect changes, UNLESS it's first render AND old rect already had valid dimensions.
+            // On first render, we need to redraw if contentRect went from (0,0,0,0) to valid dimensions,
+            // otherwise tabs won't be rendered (their factory won't be called).
+            const oldWasEmpty = oldContentRect.width === 0 && oldContentRect.height === 0;
+            const shouldRedraw = !isFirstRender.current || oldWasEmpty;
+            if (shouldRedraw) {
                 layout.redrawInternal("tabset content rect " + newContentRect);
             }
         }
