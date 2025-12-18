@@ -68,13 +68,15 @@
     "build:types": "tsc --emitDeclarationOnly --declaration --outDir dist/",
     "typecheck": "tsgo --noEmit -p tsconfig.json",
     "test": "npm run typecheck",
-    "test:browser": "vitest --workspace=vitest.workspace.ts",
+    "test:browser": "vitest --config=vitest.browser.config.ts --run",
     "lint": "eslint src/*",
     "format": "prettier --write './style/*.scss' './{src,declarations}/**/(*.ts|*.tsx|*.html)' package.json",
     "release:version": "npm version patch -m \"release: v%s\" --no-git-tag-version",
     "release:commit": "git reset && git add package.json && git commit -s -m \"release: v$npm_package_version\" && git tag v$npm_package_version",
     "release:publish": "git push && git push --tags && npm run build && npm publish",
-    "release": "npm run release:version && npm run release:commit"
+    "release": "npm run release:version && npm run release:commit",
+    "test:browser:watch": "vitest --config=vitest.browser.config.ts",
+    "test:browser:ui": "cross-env BROWSER_TEST_UI=1 vitest --config=vitest.browser.config.ts"
   },
   "peerDependencies": {
     "react": "^18.0.0 || ^19.0.0",
