@@ -66,7 +66,7 @@
     "build:doc": "typedoc --out typedoc --exclude \"**/examples/**/*.tsx\" --excludeInternal --disableSources --excludePrivate --excludeProtected --readme none ./src",
     "build:style": "sass style/underline.scss style/underline.css && sass style/gray.scss style/gray.css && sass style/light.scss style/light.css && sass style/dark.scss style/dark.css",
     "build:types": "tsc --emitDeclarationOnly --declaration --outDir dist/",
-    "typecheck": "tsc --project tsconfig.json --noEmit",
+    "typecheck": "tsgo --noEmit -p tsconfig.json",
     "test": "npm run typecheck",
     "test:browser": "vitest --workspace=vitest.workspace.ts",
     "lint": "eslint src/*",
@@ -80,7 +80,6 @@
     "react": "^18.0.0 || ^19.0.0",
     "react-dom": "^18.0.0 || ^19.0.0"
   },
-  "dependencies": {},
   "devDependencies": {
     "@eslint/eslintrc": "^3.2.0",
     "@eslint/js": "^9.16.0",
@@ -92,6 +91,7 @@
     "@types/react-dom": "^19.0.0",
     "@typescript-eslint/eslint-plugin": "^8.17.0",
     "@typescript-eslint/parser": "^8.17.0",
+    "@typescript/native-preview": "^7.0.0-dev.20251215.1",
     "@vitejs/plugin-react": "^5.0.0",
     "@vitest/browser": "^4.0.0",
     "esbuild": "^0.27.0",
