@@ -1,1 +1,5 @@
 printWidth: 200
+tabWidth: 4
+semi: false
+singleQuote: true
+experimentalTernaries: true
