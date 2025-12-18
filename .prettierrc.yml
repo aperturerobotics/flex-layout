@@ -3,3 +3,22 @@ tabWidth: 4
 semi: true
 singleQuote: false
 experimentalTernaries: true
+overrides:
+  - files:
+      - "*.json"
+      - "*.jsonc"
+      - "*.json5"
+      - ".prettierrc"
+      - ".eslintrc"
+      - "tsconfig.json"
+      - "package.json"
+      - "package-lock.json"
+      - "yarn.lock"
+    options:
+      tabWidth: 2
+      printWidth: 100
+  - files:
+      - "*.yml"
+      - "*.yaml"
+    options:
+      tabWidth: 2
