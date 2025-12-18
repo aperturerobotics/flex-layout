@@ -2,7 +2,7 @@
   "name": "@aptre/flex-layout",
   "author": "Caplin Systems Ltd",
   "description": "A multi-tab docking layout manager",
-  "version": "0.4.1",
+  "version": "0.4.2",
   "license": "ISC",
   "repository": {
     "type": "git",
