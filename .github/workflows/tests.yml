@@ -27,6 +27,8 @@ jobs:
           cache: 'yarn'
       - name: Yarn install
         run: yarn install
+      - name: Install Playwright Browsers
+        run: yarn playwright install --with-deps
       # - name: Depcheck
       #   run: yarn run deps
       - name: Build Javascript
