@@ -248,9 +248,9 @@ export function OptimizedLayout({ model, renderTab, classNameMapper, onDragState
     const tabsForContainer = useMemo(() => tabs, [tabs]);
 
     return (
-        <div style={{ position: "relative", width: "100%", height: "100%" }}>
+        <>
             <Layout model={model} factory={factory} classNameMapper={classNameMapper} onDragStateChange={handleDragStateChange} {...layoutProps} />
             <TabContainer tabs={tabsForContainer} renderTab={renderTab} isDragging={isDragging} classNameMapper={classNameMapper} />
-        </div>
+        </>
     );
 }
