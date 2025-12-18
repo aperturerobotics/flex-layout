@@ -4,6 +4,7 @@ import { TabNode } from "../model/TabNode";
 import { LayoutInternal } from "./Layout";
 import { TabSetNode } from "../model/TabSetNode";
 import { Rect } from "../Rect";
+import { ICloseType } from "../model/ICloseType";
 
 /** @internal */
 export function isDesktop() {
@@ -142,4 +143,23 @@ export function copyInlineStyles(source: HTMLElement, target: HTMLElement): bool
 export function isSafari() {
     const userAgent = navigator.userAgent;
     return userAgent.includes("Safari") && !userAgent.includes("Chrome") && !userAgent.includes("Chromium");
+}
+
+/**
+ * Determines if a tab can be closed based on its closeType and selection state.
+ * Used by TabButton and BorderButton to determine if the close button should be functional.
+ * @internal
+ */
+export function isTabClosable(node: TabNode, selected: boolean): boolean {
+    const closeType = node.getCloseType();
+    if (selected || closeType === ICloseType.Always) {
+        return true;
+    }
+    if (closeType === ICloseType.Visible) {
+        // not selected but x should be visible due to hover
+        if (window.matchMedia && window.matchMedia("(hover: hover) and (pointer: fine)").matches) {
+            return true;
+        }
+    }
+    return false;
 }

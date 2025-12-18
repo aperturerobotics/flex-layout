@@ -3,9 +3,8 @@ import { I18nLabel } from "../I18nLabel";
 import { Actions } from "../model/Actions";
 import { TabNode } from "../model/TabNode";
 import { IIcons, LayoutInternal } from "./Layout";
-import { ICloseType } from "../model/ICloseType";
 import { CLASSES } from "../Types";
-import { getRenderStateEx, isAuxMouseEvent } from "./Utils";
+import { getRenderStateEx, isAuxMouseEvent, isTabClosable } from "./Utils";
 
 /** @internal */
 export interface IBorderButtonProps {
@@ -69,22 +68,8 @@ export const BorderButton = (props: IBorderButtonProps) => {
         }
     };
 
-    const isClosable = () => {
-        const closeType = node.getCloseType();
-        if (selected || closeType === ICloseType.Always) {
-            return true;
-        }
-        if (closeType === ICloseType.Visible) {
-            // not selected but x should be visible due to hover
-            if (window.matchMedia && window.matchMedia("(hover: hover) and (pointer: fine)").matches) {
-                return true;
-            }
-        }
-        return false;
-    };
-
     const onClose = (event: React.MouseEvent<HTMLElement>) => {
-        if (isClosable()) {
+        if (isTabClosable(node, selected)) {
             layout.doAction(Actions.deleteTab(node.getId()));
         } else {
             onClick();

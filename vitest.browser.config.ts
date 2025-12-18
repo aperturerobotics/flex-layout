@@ -8,6 +8,9 @@ const showUI = process.env.BROWSER_TEST_UI === "1";
 
 export default defineConfig({
     plugins: [react()],
+    optimizeDeps: {
+        include: ["vitest-browser-react", "@testing-library/jest-dom/vitest", "react", "react-dom/client"],
+    },
     test: {
         browser: {
             enabled: true,

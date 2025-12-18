@@ -80,6 +80,8 @@ export interface ILayoutProps {
     onTabSetPlaceHolder?: TabSetPlaceHolderCallback;
     /** Name given to popout windows, defaults to 'Popout Window' */
     popoutWindowName?: string;
+    /** callback for when drag state changes, useful for OptimizedLayout to set pointer-events: none on external tab container during drag */
+    onDragStateChange?: (isDragging: boolean) => void;
 }
 
 /**
@@ -1111,6 +1113,7 @@ export class LayoutInternal extends React.Component<ILayoutInternalProps, ILayou
         this.showOverlay(false);
         this.dragEnterCount = 0;
         this.dragging = false;
+        this.props.onDragStateChange?.(false);
         if (this.outlineDiv) {
             this.selfRef.current!.removeChild(this.outlineDiv);
             this.outlineDiv = undefined;
@@ -1152,6 +1155,7 @@ export class LayoutInternal extends React.Component<ILayoutInternalProps, ILayou
 
             this.dragging = true;
             this.showOverlay(true);
+            this.props.onDragStateChange?.(true);
             // add edge indicators
             if (!this.isDraggingOverWindow && this.props.model.getMaximizedTabset(this.windowId) === undefined) {
                 this.setState({ showEdges: this.props.model.isEnableEdgeDock() });
