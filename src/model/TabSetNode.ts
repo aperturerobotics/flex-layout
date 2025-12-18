@@ -268,7 +268,18 @@ export class TabSetNode extends Node implements IDraggable, IDropTarget {
 
     /** @internal */
     setContentRect(rect: Rect) {
+        const changed = !this.contentRect.equals(rect);
         this.contentRect = rect;
+        // Fire resize events on all child tabs when contentRect changes.
+        // This is needed for OptimizedLayout which listens for resize events
+        // to position tab content outside FlexLayout's DOM.
+        if (changed && rect.width > 0 && rect.height > 0) {
+            for (const child of this.children) {
+                if (child instanceof TabNode) {
+                    child.setRect(rect);
+                }
+            }
+        }
     }
 
     /** @internal */

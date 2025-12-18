@@ -91,11 +91,13 @@ function TabContainer({
             style={{
                 position: "absolute",
                 inset: 0,
-                // CRITICAL: Disable pointer events during drag to prevent drag overlay from disappearing
-                // When tabs are rendered outside FlexLayout's DOM, dragging over them triggers dragleave
-                // on the Layout element, causing dragEnterCount to drop to 0 and clearing the drag UI.
-                pointerEvents: isDragging ? "none" : "auto",
-                // Ensure tab container doesn't block FlexLayout's tab bar interactions when not dragging
+                // CRITICAL: The container itself always has pointer-events: none
+                // so it doesn't block clicks on elements beneath it (like FlexLayout's tab bar).
+                // Individual tab panels have pointer-events: auto to receive clicks.
+                // During drag, we also disable pointer events on the children to prevent
+                // dragleave events on the Layout element.
+                pointerEvents: "none",
+                // Ensure tab container doesn't block FlexLayout's tab bar interactions
                 zIndex: 0,
             }}
             data-layout-path="/tab-container"
@@ -103,6 +105,9 @@ function TabContainer({
             {Array.from(tabs.entries()).map(([nodeId, tabInfo]) => {
                 const { node, rect, visible } = tabInfo;
                 const contentClassName = node.getContentClassName();
+                // Use percentage-based sizing as fallback when dimensions are 0 (initial state).
+                // This ensures tab content is clickable before resize events fire.
+                const hasValidDimensions = rect.width > 0 && rect.height > 0;
 
                 return (
                     <div
@@ -113,11 +118,13 @@ function TabContainer({
                         style={{
                             position: "absolute",
                             display: visible ? "flex" : "none",
-                            left: rect.x,
-                            top: rect.y,
-                            width: rect.width,
-                            height: rect.height,
+                            left: hasValidDimensions ? rect.x : 0,
+                            top: hasValidDimensions ? rect.y : 0,
+                            width: hasValidDimensions ? rect.width : "100%",
+                            height: hasValidDimensions ? rect.height : "100%",
                             overflow: "auto",
+                            // Tab panels receive pointer events when visible and not dragging
+                            pointerEvents: visible && !isDragging ? "auto" : "none",
                         }}
                     >
                         {renderTab(node)}

@@ -196,7 +196,18 @@ export class BorderNode extends Node implements IDropTarget {
 
     /** @internal */
     setContentRect(r: Rect) {
+        const changed = !this.contentRect.equals(r);
         this.contentRect = r;
+        // Fire resize events on all child tabs when contentRect changes.
+        // This is needed for OptimizedLayout which listens for resize events
+        // to position tab content outside FlexLayout's DOM.
+        if (changed && r.width > 0 && r.height > 0) {
+            for (const child of this.children) {
+                if (child instanceof TabNode) {
+                    child.setRect(r);
+                }
+            }
+        }
     }
 
     /** @internal */
