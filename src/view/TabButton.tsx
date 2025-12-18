@@ -23,6 +23,7 @@ export const TabButton = (props: ITabButtonProps) => {
     const contentRef = React.useRef<HTMLInputElement | null>(null);
     const icons = layout.getIcons();
 
+    // Measure and set tab rect after each render, and focus input if editing
     React.useLayoutEffect(() => {
         node.setTabRect(layout.getBoundingClientRect(selfRef.current!));
         if (layout.getEditingTab() === node) {

@@ -95,6 +95,7 @@ export const BorderButton = (props: IBorderButtonProps) => {
         event.stopPropagation();
     };
 
+    // Measure and set tab rect after each render, and focus input if editing
     React.useLayoutEffect(() => {
         node.setTabRect(layout.getBoundingClientRect(selfRef.current!));
         if (layout.getEditingTab() === node) {

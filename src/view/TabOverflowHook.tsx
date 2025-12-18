@@ -27,12 +27,12 @@ export const useTabOverflow = (
         userControlledLeft.current = false;
     }, [node.getSelectedNode(), node.getRect().width, node.getRect().height]);
 
+    const nodeRect = node instanceof TabSetNode ? node.getRect() : (node as BorderNode).getTabHeaderRect()!;
     React.useLayoutEffect(() => {
-        const nodeRect = node instanceof TabSetNode ? node.getRect() : (node as BorderNode).getTabHeaderRect()!;
         if (nodeRect.width > 0 && nodeRect.height > 0) {
             updateVisibleTabs();
         }
-    });
+    }, [nodeRect.width, nodeRect.height]);
 
     const instance = toolbarRef.current;
     React.useEffect(() => {

@@ -20,6 +20,7 @@ export const Row = (props: IRowProps) => {
 
     const horizontal = node.getOrientation() === Orientation.HORZ;
 
+    // Measure and set row rect after each render
     React.useLayoutEffect(() => {
         node.setRect(layout.getBoundingClientRect(selfRef.current!));
     });

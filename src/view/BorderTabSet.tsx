@@ -30,6 +30,7 @@ export const BorderTabSet = (props: IBorderTabSetProps) => {
 
     const icons = layout.getIcons();
 
+    // Measure and set the tab header rect after each render
     React.useLayoutEffect(() => {
         border.setTabHeaderRect(Rect.getBoundingClientRect(selfRef.current!).relativeTo(layout.getDomRect()!));
     });

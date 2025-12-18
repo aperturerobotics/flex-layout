@@ -32,7 +32,11 @@ export const TabSet = (props: ITabSetProps) => {
 
     const icons = layout.getIcons();
 
-    // must use useEffect (rather than useLayoutEffect) otherwise contentrect not set correctly (has height 0 when changing theme in demo)
+    // Track if this is the first render to avoid redraw loops
+    const isFirstRender = React.useRef(true);
+
+    // Measure DOM elements and update node rects
+    // Use useEffect (rather than useLayoutEffect) otherwise contentrect not set correctly (has height 0 when changing theme in demo)
     React.useEffect(() => {
         node.setRect(layout.getBoundingClientRect(selfRef.current!));
 
@@ -43,8 +47,12 @@ export const TabSet = (props: ITabSetProps) => {
         const newContentRect = Rect.getContentRect(contentRef.current!).relativeTo(layout.getDomRect()!);
         if (!node.getContentRect().equals(newContentRect)) {
             node.setContentRect(newContentRect);
-            layout.redrawInternal("tabset content rect " + newContentRect);
+            // Only trigger redraw after first render to avoid infinite loops during initial mount
+            if (!isFirstRender.current) {
+                layout.redrawInternal("tabset content rect " + newContentRect);
+            }
         }
+        isFirstRender.current = false;
     });
 
     // this must be after the useEffect, so the node rect is already set (else window popin will not position tabs correctly)
@@ -256,7 +264,13 @@ export const TabSet = (props: ITabSetProps) => {
                 onClick={onMaximizeToggle}
                 onPointerDown={onInterceptPointerDown}
             >
-                {node.isMaximized() ? (typeof icons.restore === "function" ? icons.restore(node) : icons.restore) : typeof icons.maximize === "function" ? icons.maximize(node) : icons.maximize}
+                {node.isMaximized() ?
+                    typeof icons.restore === "function" ?
+                        icons.restore(node)
+                    :   icons.restore
+                : typeof icons.maximize === "function" ?
+                    icons.maximize(node)
+                :   icons.maximize}
             </button>,
         );
     }

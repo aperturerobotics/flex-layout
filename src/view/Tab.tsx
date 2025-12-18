@@ -54,7 +54,7 @@ export const Tab = (props: ITabProps) => {
                 firstSelect.current = false;
             }
         }
-    });
+    }, [selected]);
 
     const onPointerDown = () => {
         const parent = node.getParent()!; // cannot use parentNode here since will be out of date

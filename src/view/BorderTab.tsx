@@ -17,6 +17,7 @@ export interface IBorderTabProps {
 export function BorderTab(props: IBorderTabProps) {
     const { layout, border, show } = props;
     const selfRef = React.useRef<HTMLDivElement | null>(null);
+    const isFirstRender = React.useRef(true);
 
     React.useLayoutEffect(() => {
         const outerRect = layout.getBoundingClientRect(selfRef.current!);
@@ -25,9 +26,13 @@ export function BorderTab(props: IBorderTabProps) {
             border.setOuterRect(outerRect);
             if (!border.getContentRect().equals(contentRect)) {
                 border.setContentRect(contentRect);
-                layout.redrawInternal("border content rect");
+                // Only trigger redraw after first render to avoid infinite loops during initial mount
+                if (!isFirstRender.current) {
+                    layout.redrawInternal("border content rect");
+                }
             }
         }
+        isFirstRender.current = false;
     });
 
     let horizontal = true;
