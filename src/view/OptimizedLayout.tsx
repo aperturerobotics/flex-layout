@@ -1,7 +1,9 @@
 import * as React from "react";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Rect } from "../Rect";
+import { Action } from "../model/Action";
 import { BorderNode } from "../model/BorderNode";
+import { Model } from "../model/Model";
 import { TabNode } from "../model/TabNode";
 import { TabSetNode } from "../model/TabSetNode";
 import { ILayoutProps, Layout } from "./Layout";
@@ -24,12 +26,39 @@ interface TabInfo {
 }
 
 /**
+ * Creates initial TabInfo for a new tab node
+ */
+function createTabInfo(node: TabNode): TabInfo {
+    const parent = node.getParent() as TabSetNode | BorderNode | undefined;
+    const contentRect = parent?.getContentRect() ?? Rect.empty();
+    return {
+        node,
+        rect: contentRect,
+        visible: node.isSelected(),
+    };
+}
+
+/**
  * TabRef - A placeholder component rendered inside FlexLayout.
  * It listens to TabNode events (resize, visibility) and updates the parent OptimizedLayout
  * so that the actual tab content in TabContainer can be positioned correctly.
  */
-function TabRef({ node, onRectChange, onVisibilityChange }: { node: TabNode; onRectChange: (nodeId: string, rect: Rect) => void; onVisibilityChange: (nodeId: string, visible: boolean) => void }) {
+function TabRef({
+    node,
+    onTabMount,
+    onRectChange,
+    onVisibilityChange,
+}: {
+    node: TabNode;
+    onTabMount: (node: TabNode) => void;
+    onRectChange: (nodeId: string, rect: Rect) => void;
+    onVisibilityChange: (nodeId: string, visible: boolean) => void;
+}) {
     useEffect(() => {
+        // Ensure the tab exists in the tabs Map when TabRef mounts.
+        // This handles dynamically added tabs that weren't in the initial model.
+        onTabMount(node);
+
         // Set up event listeners on the TabNode
         const handleResize = (params: { rect: Rect }) => {
             onRectChange(node.getId(), params.rect);
@@ -58,7 +87,7 @@ function TabRef({ node, onRectChange, onVisibilityChange }: { node: TabNode; onR
             node.removeEventListener("resize");
             node.removeEventListener("visibility");
         };
-    }, [node, onRectChange, onVisibilityChange]);
+    }, [node, onTabMount, onRectChange, onVisibilityChange]);
 
     // TabRef renders nothing - it's just a bridge to the real tab content
     return null;
@@ -153,57 +182,63 @@ function TabContainer({
  *
  * @see https://github.com/caplin/FlexLayout/issues/456
  */
-export function OptimizedLayout({ model, renderTab, classNameMapper, onDragStateChange, ...layoutProps }: IOptimizedLayoutProps) {
+export function OptimizedLayout({ model, renderTab, classNameMapper, onDragStateChange, onModelChange: userOnModelChange, ...layoutProps }: IOptimizedLayoutProps) {
     const [isDragging, setIsDragging] = useState(false);
     const [tabs, setTabs] = useState<Map<string, TabInfo>>(() => new Map());
 
-    // Track which tabs exist in the model
-    const tabNodesRef = useRef<Map<string, TabNode>>(new Map());
+    // Sync tabs with model - collects all TabNodes and updates the tabs Map
+    const syncTabsWithModel = useCallback(
+        (prevTabs: Map<string, TabInfo>): Map<string, TabInfo> => {
+            const modelTabNodes = new Map<string, TabNode>();
+            model.visitNodes((node) => {
+                if (node instanceof TabNode) {
+                    modelTabNodes.set(node.getId(), node);
+                }
+            });
 
-    // Sync tabs with model on mount and when model changes
-    useEffect(() => {
-        const newTabNodes = new Map<string, TabNode>();
-
-        model.visitNodes((node) => {
-            if (node instanceof TabNode) {
-                newTabNodes.set(node.getId(), node);
-            }
-        });
-
-        // Update ref
-        tabNodesRef.current = newTabNodes;
-
-        // Initialize tabs map for new tabs, preserve existing ones
-        setTabs((prevTabs) => {
             const nextTabs = new Map<string, TabInfo>();
+            let changed = false;
 
-            for (const [nodeId, node] of newTabNodes) {
+            // Add/update tabs that exist in the model
+            for (const [nodeId, node] of modelTabNodes) {
                 const existing = prevTabs.get(nodeId);
                 if (existing) {
                     // Preserve existing tab info (may have different node reference but same id)
                     nextTabs.set(nodeId, { ...existing, node });
                 } else {
-                    // New tab - initialize with empty rect, will be updated by TabRef events
-                    const parent = node.getParent() as TabSetNode | BorderNode | undefined;
-                    const contentRect = parent?.getContentRect() ?? Rect.empty();
-                    nextTabs.set(nodeId, {
-                        node,
-                        rect: contentRect,
-                        visible: node.isSelected(),
-                    });
+                    nextTabs.set(nodeId, createTabInfo(node));
+                    changed = true;
                 }
             }
 
+            // Check if any tabs were removed
+            for (const nodeId of prevTabs.keys()) {
+                if (!modelTabNodes.has(nodeId)) {
+                    changed = true;
+                }
+            }
+
+            // Only return new map if something changed
+            if (!changed && nextTabs.size === prevTabs.size) {
+                return prevTabs;
+            }
+
             return nextTabs;
-        });
-    }, [model]);
+        },
+        [model],
+    );
+
+    // Sync tabs with model on mount and when model instance changes
+    useEffect(() => {
+        setTabs((prevTabs) => syncTabsWithModel(prevTabs));
+    }, [syncTabsWithModel]);
 
     // Handle rect changes from TabRef
     const handleRectChange = useCallback((nodeId: string, rect: Rect) => {
         setTabs((prevTabs) => {
             const existing = prevTabs.get(nodeId);
             if (!existing || existing.rect.equals(rect)) {
-                return prevTabs; // No change
+                return prevTabs;
             }
 
             const nextTabs = new Map(prevTabs);
@@ -217,7 +252,7 @@ export function OptimizedLayout({ model, renderTab, classNameMapper, onDragState
         setTabs((prevTabs) => {
             const existing = prevTabs.get(nodeId);
             if (!existing || existing.visible === visible) {
-                return prevTabs; // No change
+                return prevTabs;
             }
 
             const nextTabs = new Map(prevTabs);
@@ -226,31 +261,51 @@ export function OptimizedLayout({ model, renderTab, classNameMapper, onDragState
         });
     }, []);
 
+    // Handle tab mount - ensures the tab exists in the tabs Map
+    // This is called when TabRef mounts, which happens when Layout renders a new tab
+    const handleTabMount = useCallback((node: TabNode) => {
+        setTabs((prevTabs) => {
+            if (prevTabs.has(node.getId())) {
+                return prevTabs;
+            }
+
+            const nextTabs = new Map(prevTabs);
+            nextTabs.set(node.getId(), createTabInfo(node));
+            return nextTabs;
+        });
+    }, []);
+
     // Handle drag state changes
     const handleDragStateChange = useCallback(
         (dragging: boolean) => {
             setIsDragging(dragging);
-            // Also call the user's callback if provided
             onDragStateChange?.(dragging);
         },
         [onDragStateChange],
     );
 
+    // Handle model changes (called when model.doAction() modifies the model)
+    const handleModelChange = useCallback(
+        (changedModel: Model, action: Action) => {
+            // Sync tabs with the updated model
+            setTabs((prevTabs) => syncTabsWithModel(prevTabs));
+            userOnModelChange?.(changedModel, action);
+        },
+        [syncTabsWithModel, userOnModelChange],
+    );
+
     // Factory function that returns TabRef placeholders
     const factory = useCallback(
         (node: TabNode) => {
-            return <TabRef key={node.getId()} node={node} onRectChange={handleRectChange} onVisibilityChange={handleVisibilityChange} />;
+            return <TabRef key={node.getId()} node={node} onTabMount={handleTabMount} onRectChange={handleRectChange} onVisibilityChange={handleVisibilityChange} />;
         },
-        [handleRectChange, handleVisibilityChange],
+        [handleTabMount, handleRectChange, handleVisibilityChange],
     );
-
-    // Memoize the tabs array to avoid unnecessary re-renders
-    const tabsForContainer = useMemo(() => tabs, [tabs]);
 
     return (
         <>
-            <Layout model={model} factory={factory} classNameMapper={classNameMapper} onDragStateChange={handleDragStateChange} {...layoutProps} />
-            <TabContainer tabs={tabsForContainer} renderTab={renderTab} isDragging={isDragging} classNameMapper={classNameMapper} />
+            <Layout model={model} factory={factory} classNameMapper={classNameMapper} onDragStateChange={handleDragStateChange} onModelChange={handleModelChange} {...layoutProps} />
+            <TabContainer tabs={tabs} renderTab={renderTab} isDragging={isDragging} classNameMapper={classNameMapper} />
         </>
     );
 }
