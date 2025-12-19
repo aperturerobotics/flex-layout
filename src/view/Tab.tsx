@@ -56,6 +56,14 @@ export const Tab = (props: ITabProps) => {
         }
     }, [selected]);
 
+    React.useLayoutEffect(() => {
+        node.setRect(rect);
+    }, [rect, node]);
+
+    React.useLayoutEffect(() => {
+        node.setVisible(selected);
+    }, [selected, node]);
+
     const onPointerDown = () => {
         const parent = node.getParent()!; // cannot use parentNode here since will be out of date
         if (parent instanceof TabSetNode) {
@@ -65,7 +73,6 @@ export const Tab = (props: ITabProps) => {
         }
     };
 
-    node.setRect(rect); // needed for resize event
     const cm = layout.getClassName;
     const style: Record<string, any> = {};
 
@@ -74,7 +81,6 @@ export const Tab = (props: ITabProps) => {
     let overlay = null;
 
     if (selected) {
-        node.setVisible(true);
         if (document.hidden && node.isEnablePopoutOverlay()) {
             const overlayStyle: Record<string, any> = {};
             rect.styleWithPosition(overlayStyle);
@@ -82,7 +88,6 @@ export const Tab = (props: ITabProps) => {
         }
     } else {
         style.display = "none";
-        node.setVisible(false);
     }
 
     if (parentNode instanceof TabSetNode) {
