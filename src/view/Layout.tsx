@@ -1091,6 +1091,15 @@ export class LayoutInternal extends React.Component<ILayoutInternalProps, ILayou
     onDragLeaveRaw = (event: React.DragEvent<HTMLElement>) => {
         this.dragEnterCount--;
         if (this.dragEnterCount === 0) {
+            // Check if we're leaving to an element still inside this layout.
+            // This handles nested FlexLayout instances where dragleave fires
+            // when entering the nested layout's area.
+            const relatedTarget = event.relatedTarget as Element | null;
+            if (relatedTarget && this.selfRef.current?.contains(relatedTarget)) {
+                // Still inside this layout, don't clear drag state
+                this.dragEnterCount = 1;
+                return;
+            }
             this.onDragLeave(event);
         }
     };
