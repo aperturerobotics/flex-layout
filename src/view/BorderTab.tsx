@@ -21,7 +21,7 @@ export function BorderTab(props: IBorderTabProps) {
 
     React.useLayoutEffect(() => {
         const outerRect = layout.getBoundingClientRect(selfRef.current!);
-        const contentRect = Rect.getContentRect(selfRef.current!).relativeTo(layout.getDomRect()!);
+        const contentRect = Rect.getContentRect(selfRef.current!).relativeTo(layout.getDomRect());
         if (outerRect.width > 0) {
             border.setOuterRect(outerRect);
             if (!border.getContentRect().equals(contentRect)) {
@@ -36,7 +36,7 @@ export function BorderTab(props: IBorderTabProps) {
     });
 
     let horizontal = true;
-    const style: Record<string, any> = {};
+    const style: Record<string, string | number> = {};
 
     if (border.getOrientation() === Orientation.HORZ) {
         style.width = border.getSize();

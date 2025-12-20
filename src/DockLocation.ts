@@ -128,6 +128,6 @@ export class DockLocation {
     }
 
     toString() {
-        return "(DockLocation: name=" + this.name + ", orientation=" + this.orientation + ")";
+        return "(DockLocation: name=" + this.name + ", orientation=" + this.orientation.toString() + ")";
     }
 }

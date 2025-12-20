@@ -1,5 +1,5 @@
 import { Attribute } from "../Attribute";
-import { AttributeDefinitions } from "../AttributeDefinitions";
+import { AttributeDefinitions, AttributeRecord, JsonInput } from "../AttributeDefinitions";
 import { DockLocation } from "../DockLocation";
 import { DropInfo } from "../DropInfo";
 import { Orientation } from "../Orientation";
@@ -21,8 +21,8 @@ export class TabSetNode extends Node implements IDraggable, IDropTarget {
     static readonly TYPE = "tabset";
 
     /** @internal */
-    static fromJson(json: any, model: Model, layoutWindow: LayoutWindow) {
-        const newLayoutNode = new TabSetNode(model, json);
+    static fromJson(json: IJsonTabSetNode, model: Model, layoutWindow: LayoutWindow) {
+        const newLayoutNode = new TabSetNode(model, json as unknown as JsonInput);
 
         if (json.children != null) {
             for (const jsonChild of json.children) {
@@ -61,7 +61,7 @@ export class TabSetNode extends Node implements IDraggable, IDropTarget {
     private calculatedMaxWidth: number;
 
     /** @internal */
-    constructor(model: Model, json: any) {
+    constructor(model: Model, json: JsonInput) {
         super(model);
         this.calculatedMinHeight = 0;
         this.calculatedMinWidth = 0;
@@ -217,8 +217,8 @@ export class TabSetNode extends Node implements IDraggable, IDropTarget {
     }
 
     toJson(): IJsonTabSetNode {
-        const json: any = {};
-        TabSetNode.attributeDefinitions.toJson(json, this.attributes);
+        const json: Record<string, unknown> = {};
+        TabSetNode.attributeDefinitions.toJson(json as AttributeRecord, this.attributes);
         json.children = this.children.map((child) => child.toJson());
 
         if (this.isActive()) {
@@ -229,7 +229,7 @@ export class TabSetNode extends Node implements IDraggable, IDropTarget {
             json.maximized = true;
         }
 
-        return json;
+        return json as unknown as IJsonTabSetNode;
     }
 
     /** @internal */
@@ -312,13 +312,13 @@ export class TabSetNode extends Node implements IDraggable, IDropTarget {
         if (dragNode === this) {
             const dockLocation = DockLocation.CENTER;
             const outlineRect = this.tabStripRect;
-            dropInfo = new DropInfo(this, outlineRect!, dockLocation, -1, CLASSES.FLEXLAYOUT__OUTLINE_RECT);
+            dropInfo = new DropInfo(this, outlineRect, dockLocation, -1, CLASSES.FLEXLAYOUT__OUTLINE_RECT);
         } else if (this.getWindowId() !== Model.MAIN_WINDOW_ID && !canDockToWindow(dragNode)) {
             return undefined;
-        } else if (this.contentRect!.contains(x, y)) {
+        } else if (this.contentRect.contains(x, y)) {
             let dockLocation = DockLocation.CENTER;
             if (this.model.getMaximizedTabset((this.parent as RowNode).getWindowId()) === undefined) {
-                dockLocation = DockLocation.getLocation(this.contentRect!, x, y);
+                dockLocation = DockLocation.getLocation(this.contentRect, x, y);
             }
             const outlineRect = dockLocation.getDockRect(this.rect);
             dropInfo = new DropInfo(this, outlineRect, dockLocation, -1, CLASSES.FLEXLAYOUT__OUTLINE_RECT);
@@ -422,7 +422,7 @@ export class TabSetNode extends Node implements IDraggable, IDropTarget {
                 }
                 // console.log("added child at : " + insertPos);
             } else if (dragNode instanceof RowNode) {
-                (dragNode as RowNode).forEachNode((child, level) => {
+                dragNode.forEachNode((child, _level) => {
                     if (child instanceof TabNode) {
                         this.addChild(child, insertPos);
                         // console.log("added child at : " + insertPos);
@@ -447,7 +447,8 @@ export class TabSetNode extends Node implements IDraggable, IDropTarget {
                 // create new tabset parent
                 // console.log("create a new tabset");
                 const callback = this.model.getOnCreateTabSet();
-                moveNode = new TabSetNode(this.model, callback ? callback(dragNode as TabNode) : {});
+                const attrs = callback ? callback(dragNode) : {};
+                moveNode = new TabSetNode(this.model, attrs as unknown as JsonInput);
                 moveNode.addChild(dragNode);
                 // console.log("added child at end");
                 dragParent = moveNode;
@@ -493,7 +494,7 @@ export class TabSetNode extends Node implements IDraggable, IDropTarget {
     }
 
     /** @internal */
-    updateAttrs(json: any) {
+    updateAttrs(json: JsonInput) {
         TabSetNode.attributeDefinitions.update(json, this.attributes);
     }
 

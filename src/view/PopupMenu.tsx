@@ -78,13 +78,13 @@ const PopupMenu = (props: IPopupMenuProps) => {
 
     const onDragStart = (event: React.DragEvent<HTMLElement>, node: TabNode) => {
         event.stopPropagation(); // prevent starting a tabset drag as well
-        layout.setDragNode(event.nativeEvent, node as TabNode);
+        layout.setDragNode(event.nativeEvent, node);
         setTimeout(() => {
             onHide();
         }, 0);
     };
 
-    const onDragEnd = (event: React.DragEvent<HTMLElement>) => {
+    const onDragEnd = (_event: React.DragEvent<HTMLElement>) => {
         layout.clearDragMain();
     };
 

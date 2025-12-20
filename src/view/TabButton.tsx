@@ -26,20 +26,20 @@ export const TabButton = (props: ITabButtonProps) => {
     React.useLayoutEffect(() => {
         node.setTabRect(layout.getBoundingClientRect(selfRef.current!));
         if (layout.getEditingTab() === node) {
-            (contentRef.current! as HTMLInputElement).select();
+            contentRef.current!.select();
         }
     });
 
     const onDragStart = (event: React.DragEvent<HTMLElement>) => {
         if (node.isEnableDrag()) {
             event.stopPropagation(); // prevent starting a tabset drag as well
-            layout.setDragNode(event.nativeEvent, node as TabNode);
+            layout.setDragNode(event.nativeEvent, node);
         } else {
             event.preventDefault();
         }
     };
 
-    const onDragEnd = (event: React.DragEvent<HTMLElement>) => {
+    const onDragEnd = (_event: React.DragEvent<HTMLElement>) => {
         layout.clearDragMain();
     };
 

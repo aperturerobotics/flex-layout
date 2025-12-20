@@ -4,6 +4,7 @@ import { Rect } from "../Rect";
 import { Action } from "../model/Action";
 import { BorderNode } from "../model/BorderNode";
 import { Model } from "../model/Model";
+import { ResizeEventParams, VisibilityEventParams } from "../model/Node";
 import { TabNode } from "../model/TabNode";
 import { TabSetNode } from "../model/TabSetNode";
 import { ILayoutProps, Layout } from "./Layout";
@@ -60,11 +61,11 @@ function TabRef({
         onTabMount(node);
 
         // Set up event listeners on the TabNode
-        const handleResize = (params: { rect: Rect }) => {
+        const handleResize = (params: ResizeEventParams) => {
             onRectChange(node.getId(), params.rect);
         };
 
-        const handleVisibility = (params: { visible: boolean }) => {
+        const handleVisibility = (params: VisibilityEventParams) => {
             onVisibilityChange(node.getId(), params.visible);
         };
 

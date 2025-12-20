@@ -1,5 +1,6 @@
 import { Attribute } from "../Attribute";
-import { AttributeDefinitions } from "../AttributeDefinitions";
+import { AttributeDefinitions, JsonInput } from "../AttributeDefinitions";
+import { ICloseType } from "../model/ICloseType";
 import { Rect } from "../Rect";
 import { BorderNode } from "./BorderNode";
 import { IDraggable } from "./IDraggable";
@@ -12,7 +13,7 @@ export class TabNode extends Node implements IDraggable {
     static readonly TYPE = "tab";
 
     /** @internal */
-    static fromJson(json: any, model: Model, addToModel: boolean = true) {
+    static fromJson(json: IJsonTabNode, model: Model, addToModel: boolean = true) {
         const newLayoutNode = new TabNode(model, json, addToModel);
         return newLayoutNode;
     }
@@ -26,7 +27,7 @@ export class TabNode extends Node implements IDraggable {
     /** @internal */
     private renderedName?: string;
     /** @internal */
-    private extra: Record<string, any>;
+    private extra: Record<string, unknown>;
     /** @internal */
     private visible: boolean;
     /** @internal */
@@ -37,7 +38,7 @@ export class TabNode extends Node implements IDraggable {
     private scrollLeft?: number;
 
     /** @internal */
-    constructor(model: Model, json: any, addToModel: boolean = true) {
+    constructor(model: Model, json: IJsonTabNode, addToModel: boolean = true) {
         super(model);
 
         this.extra = {}; // extra data added to node not saved in json
@@ -46,7 +47,7 @@ export class TabNode extends Node implements IDraggable {
         this.rendered = false;
         this.visible = false;
 
-        TabNode.attributeDefinitions.fromJson(json, this.attributes);
+        TabNode.attributeDefinitions.fromJson(json as unknown as JsonInput, this.attributes);
         if (addToModel === true) {
             model.addNode(this);
         }
@@ -115,7 +116,7 @@ export class TabNode extends Node implements IDraggable {
     }
 
     getCloseType() {
-        return this.getAttr("closeType") as number;
+        return this.getAttr("closeType") as ICloseType;
     }
 
     isEnablePopout() {
@@ -175,9 +176,9 @@ export class TabNode extends Node implements IDraggable {
     }
 
     toJson(): IJsonTabNode {
-        const json = {};
-        TabNode.attributeDefinitions.toJson(json, this.attributes);
-        return json as IJsonTabNode;
+        const json: Record<string, unknown> = {};
+        TabNode.attributeDefinitions.toJson(json as Parameters<typeof TabNode.attributeDefinitions.toJson>[0], this.attributes);
+        return json as unknown as IJsonTabNode;
     }
 
     /** @internal */
@@ -304,7 +305,7 @@ export class TabNode extends Node implements IDraggable {
     }
 
     /** @internal */
-    updateAttrs(json: any) {
+    updateAttrs(json: JsonInput) {
         TabNode.attributeDefinitions.update(json, this.attributes);
     }
 

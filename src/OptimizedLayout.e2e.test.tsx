@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import { render } from "vitest-browser-react";
 import * as React from "react";
 import { OptimizedLayout } from "./view/OptimizedLayout";
-import { Model, IJsonModel, Actions, DockLocation } from "./index";
+import { Model, IJsonModel, Actions, DockLocation, TabNode, TabSetNode } from "./index";
 import "@testing-library/jest-dom/vitest";
 
 const jsonModel: IJsonModel = {
@@ -39,7 +39,7 @@ describe("OptimizedLayout", () => {
 
     it("renders tabs with absolute positioning in external container", async () => {
         const model = Model.fromJson(jsonModel);
-        render(<OptimizedLayout model={model} renderTab={(node) => <div data-testid={`content-${node.getId()}`}>Content for {node.getName()}</div>} />, { container });
+        await render(<OptimizedLayout model={model} renderTab={(node) => <div data-testid={`content-${node.getId()}`}>Content for {node.getName()}</div>} />, { container });
 
         // Wait for layout to render
         await new Promise((resolve) => setTimeout(resolve, 100));
@@ -59,7 +59,7 @@ describe("OptimizedLayout", () => {
 
     it("shows selected tab and hides others", async () => {
         const model = Model.fromJson(jsonModel);
-        render(<OptimizedLayout model={model} renderTab={(node) => <div data-testid={`content-${node.getId()}`}>Content for {node.getName()}</div>} />, { container });
+        await render(<OptimizedLayout model={model} renderTab={(node) => <div data-testid={`content-${node.getId()}`}>Content for {node.getName()}</div>} />, { container });
 
         // Wait for layout to render
         await new Promise((resolve) => setTimeout(resolve, 100));
@@ -84,7 +84,7 @@ describe("OptimizedLayout", () => {
         let dragStateCallback: ((isDragging: boolean) => void) | undefined;
 
         const model = Model.fromJson(jsonModel);
-        render(
+        await render(
             <OptimizedLayout
                 model={model}
                 renderTab={(node) => <div data-testid={`content-${node.getId()}`}>Content for {node.getName()}</div>}
@@ -181,7 +181,7 @@ describe("OptimizedLayout", () => {
         }
 
         const model = Model.fromJson(jsonModel);
-        render(<OptimizedLayout model={model} renderTab={(node) => <TrackedTab name={node.getName()} />} />, { container });
+        await render(<OptimizedLayout model={model} renderTab={(node) => <TrackedTab name={node.getName()} />} />, { container });
 
         // Wait for initial render
         await new Promise((resolve) => setTimeout(resolve, 100));
@@ -207,7 +207,7 @@ describe("OptimizedLayout", () => {
 
     it("renders FlexLayout structure alongside external tabs", async () => {
         const model = Model.fromJson(jsonModel);
-        render(<OptimizedLayout model={model} renderTab={(node) => <div data-testid={`content-${node.getId()}`}>Content for {node.getName()}</div>} />, { container });
+        await render(<OptimizedLayout model={model} renderTab={(node) => <div data-testid={`content-${node.getId()}`}>Content for {node.getName()}</div>} />, { container });
 
         // Wait for layout to render
         await new Promise((resolve) => setTimeout(resolve, 100));
@@ -223,7 +223,7 @@ describe("OptimizedLayout", () => {
 
     it("tab content receives non-zero height dimensions", async () => {
         const model = Model.fromJson(jsonModel);
-        render(<OptimizedLayout model={model} renderTab={(node) => <div data-testid={`content-${node.getId()}`}>Content for {node.getName()}</div>} />, { container });
+        await render(<OptimizedLayout model={model} renderTab={(node) => <div data-testid={`content-${node.getId()}`}>Content for {node.getName()}</div>} />, { container });
 
         // Wait for layout to render and resize events to fire
         await new Promise((resolve) => setTimeout(resolve, 200));
@@ -259,7 +259,7 @@ describe("OptimizedLayout", () => {
         // (intercepting would overwrite TabRef's listener)
         const model = Model.fromJson(jsonModel);
 
-        render(<OptimizedLayout model={model} renderTab={(node) => <div data-testid={`content-${node.getId()}`}>Content for {node.getName()}</div>} />, { container });
+        await render(<OptimizedLayout model={model} renderTab={(node) => <div data-testid={`content-${node.getId()}`}>Content for {node.getName()}</div>} />, { container });
 
         // Wait for layout to render and resize events to fire
         await new Promise((resolve) => setTimeout(resolve, 300));
@@ -269,8 +269,8 @@ describe("OptimizedLayout", () => {
         let tabRect: { width: number; height: number } | null = null;
         model.visitNodes((node) => {
             if (node.getId() === "tab1") {
-                const tabNode = node as any;
-                tabRect = tabNode.rect;
+                const tabNode = node as TabNode;
+                tabRect = tabNode.getRect();
             }
         });
 
@@ -282,7 +282,7 @@ describe("OptimizedLayout", () => {
 
     it("TabSetNode.contentRect has non-zero height after render", async () => {
         const model = Model.fromJson(jsonModel);
-        render(<OptimizedLayout model={model} renderTab={(node) => <div data-testid={`content-${node.getId()}`}>Content for {node.getName()}</div>} />, { container });
+        await render(<OptimizedLayout model={model} renderTab={(node) => <div data-testid={`content-${node.getId()}`}>Content for {node.getName()}</div>} />, { container });
 
         // Wait for layout to render
         await new Promise((resolve) => setTimeout(resolve, 200));
@@ -291,7 +291,7 @@ describe("OptimizedLayout", () => {
         let tabsetContentRect: { width: number; height: number } | null = null;
         model.visitNodes((node) => {
             if (node.getType() === "tabset") {
-                const tabsetNode = node as any;
+                const tabsetNode = node as TabSetNode;
                 tabsetContentRect = tabsetNode.getContentRect();
             }
         });
@@ -303,7 +303,7 @@ describe("OptimizedLayout", () => {
 
     it("selected tab has computed dimensions matching TabSetNode contentRect", async () => {
         const model = Model.fromJson(jsonModel);
-        render(<OptimizedLayout model={model} renderTab={(node) => <div data-testid={`content-${node.getId()}`}>Content for {node.getName()}</div>} />, { container });
+        await render(<OptimizedLayout model={model} renderTab={(node) => <div data-testid={`content-${node.getId()}`}>Content for {node.getName()}</div>} />, { container });
 
         // Wait for layout to render - use longer timeout to allow all resize events
         await new Promise((resolve) => setTimeout(resolve, 500));
@@ -318,7 +318,7 @@ describe("OptimizedLayout", () => {
         let tabsetContentRect: ContentRect | null = null;
         model.visitNodes((node) => {
             if (node.getType() === "tabset") {
-                const tabsetNode = node as any;
+                const tabsetNode = node as TabSetNode;
                 tabsetContentRect = tabsetNode.getContentRect() as ContentRect;
             }
         });
@@ -351,7 +351,7 @@ describe("OptimizedLayout", () => {
         // This test verifies that the tabs are rendered with correct dimensions
         const model = Model.fromJson(jsonModel);
 
-        render(<OptimizedLayout model={model} renderTab={(node) => <div data-testid={`content-${node.getId()}`}>Content for {node.getName()}</div>} />, { container });
+        await render(<OptimizedLayout model={model} renderTab={(node) => <div data-testid={`content-${node.getId()}`}>Content for {node.getName()}</div>} />, { container });
 
         // Wait for layout to render and state updates
         await new Promise((resolve) => setTimeout(resolve, 500));
@@ -382,7 +382,7 @@ describe("OptimizedLayout", () => {
 
     it("creates content div for dynamically added tab", async () => {
         const model = Model.fromJson(jsonModel);
-        render(<OptimizedLayout model={model} renderTab={(node) => <div data-testid={`content-${node.getId()}`}>Content for {node.getName()}</div>} />, { container });
+        await render(<OptimizedLayout model={model} renderTab={(node) => <div data-testid={`content-${node.getId()}`}>Content for {node.getName()}</div>} />, { container });
 
         // Wait for initial render
         await new Promise((resolve) => setTimeout(resolve, 100));
@@ -417,7 +417,7 @@ describe("OptimizedLayout", () => {
 
     it("shows content when clicking on dynamically added tab", async () => {
         const model = Model.fromJson(jsonModel);
-        render(<OptimizedLayout model={model} renderTab={(node) => <div data-testid={`content-${node.getId()}`}>Content for {node.getName()}</div>} />, { container });
+        await render(<OptimizedLayout model={model} renderTab={(node) => <div data-testid={`content-${node.getId()}`}>Content for {node.getName()}</div>} />, { container });
 
         await new Promise((resolve) => setTimeout(resolve, 100));
 
@@ -450,7 +450,7 @@ describe("OptimizedLayout", () => {
 
     it("handles multiple dynamically added tabs", async () => {
         const model = Model.fromJson(jsonModel);
-        render(<OptimizedLayout model={model} renderTab={(node) => <div data-testid={`content-${node.getId()}`}>Content for {node.getName()}</div>} />, { container });
+        await render(<OptimizedLayout model={model} renderTab={(node) => <div data-testid={`content-${node.getId()}`}>Content for {node.getName()}</div>} />, { container });
 
         await new Promise((resolve) => setTimeout(resolve, 100));
 
@@ -482,7 +482,7 @@ describe("OptimizedLayout", () => {
 
     it("dynamically added tab content receives proper dimensions", async () => {
         const model = Model.fromJson(jsonModel);
-        render(<OptimizedLayout model={model} renderTab={(node) => <div data-testid={`content-${node.getId()}`}>Content for {node.getName()}</div>} />, { container });
+        await render(<OptimizedLayout model={model} renderTab={(node) => <div data-testid={`content-${node.getId()}`}>Content for {node.getName()}</div>} />, { container });
 
         await new Promise((resolve) => setTimeout(resolve, 200));
 
@@ -533,7 +533,7 @@ describe("OptimizedLayout", () => {
 
     it("switching between original and dynamically added tabs works correctly", async () => {
         const model = Model.fromJson(jsonModel);
-        render(<OptimizedLayout model={model} renderTab={(node) => <div data-testid={`content-${node.getId()}`}>Content for {node.getName()}</div>} />, { container });
+        await render(<OptimizedLayout model={model} renderTab={(node) => <div data-testid={`content-${node.getId()}`}>Content for {node.getName()}</div>} />, { container });
 
         await new Promise((resolve) => setTimeout(resolve, 100));
 
@@ -580,7 +580,7 @@ describe("OptimizedLayout", () => {
 
     it("deleting dynamically added tab removes its content div", async () => {
         const model = Model.fromJson(jsonModel);
-        render(<OptimizedLayout model={model} renderTab={(node) => <div data-testid={`content-${node.getId()}`}>Content for {node.getName()}</div>} />, { container });
+        await render(<OptimizedLayout model={model} renderTab={(node) => <div data-testid={`content-${node.getId()}`}>Content for {node.getName()}</div>} />, { container });
 
         await new Promise((resolve) => setTimeout(resolve, 100));
 

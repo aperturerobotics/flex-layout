@@ -41,7 +41,7 @@ export const Row = (props: IRowProps) => {
         i++;
     }
 
-    const style: Record<string, any> = {
+    const style: Record<string, string | number> = {
         flexGrow: Math.max(1, node.getWeight() * 1000), // NOTE:  flex-grow cannot have values < 1 otherwise will not fill parent, need to normalize
         minWidth: node.getMinWidth(),
         minHeight: node.getMinHeight(),

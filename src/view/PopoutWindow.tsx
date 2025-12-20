@@ -56,12 +56,12 @@ export const PopoutWindow = (props: React.PropsWithChildren<IPopoutWindowProps>)
                         const popoutContent = popoutDocument.createElement("div");
                         popoutContent.className = CLASSES.FLEXLAYOUT__FLOATING_WINDOW_CONTENT;
                         popoutDocument.body.appendChild(popoutContent);
-                        copyStyles(popoutDocument, styleMap).then(() => {
+                        void copyStyles(popoutDocument, styleMap).then(() => {
                             setContent(popoutContent); // re-render once link styles loaded
                         });
 
                         // listen for style mutations
-                        const observer = new MutationObserver((mutationsList: any) => handleStyleMutations(mutationsList, popoutDocument, styleMap));
+                        const observer = new MutationObserver((mutationsList: MutationRecord[]) => handleStyleMutations(mutationsList, popoutDocument, styleMap));
                         observer.observe(document.head, { childList: true });
 
                         // listen for popout unloading (needs to be after load for safari)
@@ -89,13 +89,13 @@ export const PopoutWindow = (props: React.PropsWithChildren<IPopoutWindowProps>)
     }, []);
 
     if (content !== undefined) {
-        return createPortal(children, content!);
+        return createPortal(children, content);
     } else {
         return null;
     }
 };
 
-function handleStyleMutations(mutationsList: any, popoutDocument: Document, styleMap: Map<HTMLElement, HTMLElement>) {
+function handleStyleMutations(mutationsList: MutationRecord[], popoutDocument: Document, styleMap: Map<HTMLElement, HTMLElement>) {
     for (const mutation of mutationsList) {
         if (mutation.type === "childList") {
             for (const addition of mutation.addedNodes) {
@@ -118,9 +118,11 @@ function handleStyleMutations(mutationsList: any, popoutDocument: Document, styl
 /** @internal */
 function copyStyles(popoutDoc: Document, styleMap: Map<HTMLElement, HTMLElement>): Promise<boolean[]> {
     const promises: Promise<boolean>[] = [];
-    const styleElements = document.querySelectorAll('style, link[rel="stylesheet"]') as NodeListOf<HTMLElement>;
+    const styleElements = document.querySelectorAll('style, link[rel="stylesheet"]');
     for (const element of styleElements) {
-        copyStyle(popoutDoc, element, styleMap, promises);
+        if (element instanceof HTMLElement) {
+            copyStyle(popoutDoc, element, styleMap, promises);
+        }
     }
     return Promise.all(promises);
 }
@@ -145,7 +147,7 @@ function copyStyle(popoutDoc: Document, element: HTMLElement, styleMap: Map<HTML
             const styleElement = element.cloneNode(true) as HTMLStyleElement;
             popoutDoc.head.appendChild(styleElement);
             styleMap.set(element, styleElement);
-        } catch (e) {
+        } catch {
             // can throw an exception
         }
     }

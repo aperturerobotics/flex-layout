@@ -1,4 +1,10 @@
-import { Attribute } from "./Attribute";
+import { Attribute, AttributeValue } from "./Attribute";
+
+/** Record type for node attributes - used internally for attribute storage */
+export type AttributeRecord = Record<string, AttributeValue>;
+
+/** Input type for JSON objects being read - accepts any object with string keys */
+export type JsonInput = Record<string, unknown>;
 
 /** @internal */
 export class AttributeDefinitions {
@@ -10,7 +16,7 @@ export class AttributeDefinitions {
         this.nameToAttribute = new Map();
     }
 
-    addWithAll(name: string, modelName: string | undefined, defaultValue: any, alwaysWriteJson?: boolean) {
+    addWithAll(name: string, modelName: string | undefined, defaultValue: AttributeValue, alwaysWriteJson?: boolean) {
         const attr = new Attribute(name, modelName, defaultValue, alwaysWriteJson);
         this.attributes.push(attr);
         this.nameToAttribute.set(name, attr);
@@ -21,7 +27,7 @@ export class AttributeDefinitions {
         return this.addWithAll(name, modelName, undefined, false);
     }
 
-    add(name: string, defaultValue: any, alwaysWriteJson?: boolean) {
+    add(name: string, defaultValue: AttributeValue, alwaysWriteJson?: boolean) {
         return this.addWithAll(name, undefined, defaultValue, alwaysWriteJson);
     }
 
@@ -37,7 +43,7 @@ export class AttributeDefinitions {
         return undefined;
     }
 
-    toJson(jsonObj: any, obj: any) {
+    toJson(jsonObj: AttributeRecord, obj: AttributeRecord) {
         for (const attr of this.attributes) {
             const fromValue = obj[attr.name];
             if (attr.alwaysWriteJson || fromValue !== attr.defaultValue) {
@@ -46,11 +52,11 @@ export class AttributeDefinitions {
         }
     }
 
-    fromJson(jsonObj: any, obj: any) {
+    fromJson(jsonObj: JsonInput, obj: AttributeRecord) {
         for (const attr of this.attributes) {
-            let fromValue = jsonObj[attr.name];
+            let fromValue = jsonObj[attr.name] as AttributeValue | undefined;
             if (fromValue === undefined && attr.alias) {
-                fromValue = jsonObj[attr.alias];
+                fromValue = jsonObj[attr.alias] as AttributeValue | undefined;
             }
             if (fromValue === undefined) {
                 obj[attr.name] = attr.defaultValue;
@@ -60,10 +66,10 @@ export class AttributeDefinitions {
         }
     }
 
-    update(jsonObj: any, obj: any) {
+    update(jsonObj: JsonInput, obj: AttributeRecord) {
         for (const attr of this.attributes) {
-            if (jsonObj.hasOwnProperty(attr.name)) {
-                const fromValue = jsonObj[attr.name];
+            if (Object.prototype.hasOwnProperty.call(jsonObj, attr.name)) {
+                const fromValue = jsonObj[attr.name] as AttributeValue | undefined;
                 if (fromValue === undefined) {
                     delete obj[attr.name];
                 } else {
@@ -73,7 +79,7 @@ export class AttributeDefinitions {
         }
     }
 
-    setDefaults(obj: any) {
+    setDefaults(obj: AttributeRecord) {
         for (const attr of this.attributes) {
             obj[attr.name] = attr.defaultValue;
         }

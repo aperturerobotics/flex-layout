@@ -1,4 +1,4 @@
-import { AttributeDefinitions } from "../AttributeDefinitions";
+import { AttributeRecord, AttributeDefinitions, JsonInput } from "../AttributeDefinitions";
 import { DockLocation } from "../DockLocation";
 import { DropInfo } from "../DropInfo";
 import { Orientation } from "../Orientation";
@@ -7,11 +7,30 @@ import { IDraggable } from "./IDraggable";
 import { IJsonBorderNode, IJsonRowNode, IJsonTabNode, IJsonTabSetNode } from "./IJsonModel";
 import { Model } from "./Model";
 
+/** Event parameters for resize events */
+export interface ResizeEventParams {
+    rect: Rect;
+}
+
+/** Event parameters for visibility events */
+export interface VisibilityEventParams {
+    visible: boolean;
+}
+
+/** Empty event parameters (for close, save, maximize) */
+export type EmptyEventParams = Record<string, never>;
+
+/** All possible event parameter types - use this for generic handlers */
+export type NodeEventParams = ResizeEventParams | VisibilityEventParams | EmptyEventParams;
+
+/** Callback type for node events - parameters vary by event type */
+export type NodeEventCallback<T = NodeEventParams> = (params: T) => void;
+
 export abstract class Node {
     /** @internal */
     protected model: Model;
     /** @internal */
-    protected attributes: Record<string, any>;
+    protected attributes: AttributeRecord;
     /** @internal */
     protected parent?: Node;
     /** @internal */
@@ -21,7 +40,7 @@ export abstract class Node {
     /** @internal */
     protected path: string;
     /** @internal */
-    protected listeners: Map<string, (params: any) => void>;
+    protected listeners: Map<string, NodeEventCallback<NodeEventParams>>;
 
     /** @internal */
     protected constructor(_model: Model) {
@@ -34,15 +53,15 @@ export abstract class Node {
     }
 
     getId() {
-        let id = this.attributes.id;
-        if (id !== undefined) {
-            return id as string;
+        const id = this.attributes.id;
+        if (typeof id === "string") {
+            return id;
         }
 
-        id = this.model.nextUniqueId();
-        this.setId(id);
+        const newId = this.model.nextUniqueId();
+        this.setId(newId);
 
-        return id as string;
+        return newId;
     }
 
     getModel() {
@@ -78,8 +97,8 @@ export abstract class Node {
     }
 
     // event can be: resize, visibility, maximize (on tabset), close
-    setEventListener(event: string, callback: (params: any) => void) {
-        this.listeners.set(event, callback);
+    setEventListener<T extends NodeEventParams>(event: string, callback: NodeEventCallback<T>) {
+        this.listeners.set(event, callback as NodeEventCallback<NodeEventParams>);
     }
 
     removeEventListener(event: string) {
@@ -94,7 +113,7 @@ export abstract class Node {
     }
 
     /** @internal */
-    fireEvent(event: string, params: any) {
+    fireEvent(event: string, params: NodeEventParams) {
         // console.log(this._type, " fireEvent " + event + " " + JSON.stringify(params));
         if (this.listeners.has(event)) {
             this.listeners.get(event)!(params);
@@ -200,7 +219,7 @@ export abstract class Node {
     }
 
     /** @internal */
-    canDrop(dragNode: Node & IDraggable, x: number, y: number): DropInfo | undefined {
+    canDrop(_dragNode: Node & IDraggable, _x: number, _y: number): DropInfo | undefined {
         return undefined;
     }
 
@@ -255,7 +274,7 @@ export abstract class Node {
     }
 
     /** @internal */
-    styleWithPosition(style?: Record<string, any>) {
+    styleWithPosition(style?: Record<string, string | number>) {
         if (style == null) {
             style = {};
         }
@@ -274,7 +293,7 @@ export abstract class Node {
 
     // implemented by subclasses
     /** @internal */
-    abstract updateAttrs(json: any): void;
+    abstract updateAttrs(json: JsonInput): void;
     /** @internal */
     abstract getAttributeDefinitions(): AttributeDefinitions;
 }

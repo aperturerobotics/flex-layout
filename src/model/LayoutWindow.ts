@@ -87,7 +87,7 @@ export class LayoutWindow {
 
     /** @internal */
     public get toScreenRectFunction(): (rect: Rect) => Rect {
-        return this._toScreenRectFunction!;
+        return this._toScreenRectFunction;
     }
 
     /** @internal */

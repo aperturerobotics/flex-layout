@@ -22,3 +22,5 @@ export const SizeTracker = React.memo(
         );
     },
 );
+
+SizeTracker.displayName = "SizeTracker";

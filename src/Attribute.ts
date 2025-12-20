@@ -1,3 +1,8 @@
+import { ICloseType } from "./model/ICloseType";
+
+/** Valid types for attribute values - the `config` property uses unknown for user data */
+export type AttributeValue = string | number | boolean | ICloseType | undefined;
+
 /** @internal */
 export class Attribute {
     static NUMBER = "number";
@@ -9,14 +14,14 @@ export class Attribute {
     modelName?: string;
     pairedAttr?: Attribute;
     pairedType?: string;
-    defaultValue: any;
+    defaultValue: AttributeValue;
     alwaysWriteJson?: boolean;
     type?: string;
     required: boolean;
     fixed: boolean;
     description?: string;
 
-    constructor(name: string, modelName: string | undefined, defaultValue: any, alwaysWriteJson?: boolean) {
+    constructor(name: string, modelName: string | undefined, defaultValue: AttributeValue, alwaysWriteJson?: boolean) {
         this.name = name;
         this.alias = undefined;
         this.modelName = modelName;

@@ -40,6 +40,7 @@ export interface IJsonTabSetNode extends ITabSetAttributes {
     children: IJsonTabNode[];
 }
 
+// eslint-disable-next-line @typescript-eslint/no-empty-object-type -- IJsonTabNode may be extended in the future
 export interface IJsonTabNode extends ITabAttributes {}
 
 //----------------------------------------------------------------------------------------------------------
@@ -512,6 +513,7 @@ export interface ITabSetAttributes {
 
 	  Default: undefined
 	 */
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- config is user-defined data
     config?: any;
 
     /**
@@ -698,6 +700,7 @@ export interface ITabAttributes {
 
 	  Default: undefined
 	 */
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- config is user-defined data
     config?: any;
 
     /**
@@ -857,6 +860,7 @@ export interface IBorderAttributes {
 
 	  Default: undefined
 	 */
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- config is user-defined data
     config?: any;
 
     /**

@@ -97,7 +97,7 @@ describe("Layout Features", () => {
     describe("Tab Selection", () => {
         it("shows first tab as selected by default", async () => {
             const model = Model.fromJson(basicModel);
-            render(<Layout model={model} factory={(node) => <div>Content {node.getName()}</div>} />, { container });
+            await render(<Layout model={model} factory={(node) => <div>Content {node.getName()}</div>} />, { container });
 
             await new Promise((resolve) => setTimeout(resolve, 100));
 
@@ -108,7 +108,7 @@ describe("Layout Features", () => {
 
         it("switches selected tab when clicking tab button", async () => {
             const model = Model.fromJson(basicModel);
-            render(<Layout model={model} factory={(node) => <div>Content {node.getName()}</div>} />, { container });
+            await render(<Layout model={model} factory={(node) => <div>Content {node.getName()}</div>} />, { container });
 
             await new Promise((resolve) => setTimeout(resolve, 100));
 
@@ -123,7 +123,7 @@ describe("Layout Features", () => {
 
         it("maintains selection after model action", async () => {
             const model = Model.fromJson(basicModel);
-            render(<Layout model={model} factory={(node) => <div>Content {node.getName()}</div>} />, { container });
+            await render(<Layout model={model} factory={(node) => <div>Content {node.getName()}</div>} />, { container });
 
             await new Promise((resolve) => setTimeout(resolve, 100));
 
@@ -139,7 +139,7 @@ describe("Layout Features", () => {
     describe("Tab Closing", () => {
         it("shows close button when tabEnableClose is true", async () => {
             const model = Model.fromJson(basicModel);
-            render(<Layout model={model} factory={(node) => <div>Content {node.getName()}</div>} />, { container });
+            await render(<Layout model={model} factory={(node) => <div>Content {node.getName()}</div>} />, { container });
 
             await new Promise((resolve) => setTimeout(resolve, 100));
 
@@ -149,7 +149,7 @@ describe("Layout Features", () => {
 
         it("removes tab when close button is clicked", async () => {
             const model = Model.fromJson(basicModel);
-            render(<Layout model={model} factory={(node) => <div>Content {node.getName()}</div>} />, { container });
+            await render(<Layout model={model} factory={(node) => <div>Content {node.getName()}</div>} />, { container });
 
             await new Promise((resolve) => setTimeout(resolve, 100));
 
@@ -167,7 +167,7 @@ describe("Layout Features", () => {
 
         it("selects next tab after closing selected tab", async () => {
             const model = Model.fromJson(basicModel);
-            render(<Layout model={model} factory={(node) => <div>Content {node.getName()}</div>} />, { container });
+            await render(<Layout model={model} factory={(node) => <div>Content {node.getName()}</div>} />, { container });
 
             await new Promise((resolve) => setTimeout(resolve, 100));
 
@@ -184,7 +184,7 @@ describe("Layout Features", () => {
     describe("Adding Tabs", () => {
         it("adds new tab via model action", async () => {
             const model = Model.fromJson(basicModel);
-            render(<Layout model={model} factory={(node) => <div>Content {node.getName()}</div>} />, { container });
+            await render(<Layout model={model} factory={(node) => <div>Content {node.getName()}</div>} />, { container });
 
             await new Promise((resolve) => setTimeout(resolve, 100));
 
@@ -198,7 +198,7 @@ describe("Layout Features", () => {
 
         it("selects new tab when select parameter is true", async () => {
             const model = Model.fromJson(basicModel);
-            render(<Layout model={model} factory={(node) => <div>Content {node.getName()}</div>} />, { container });
+            await render(<Layout model={model} factory={(node) => <div>Content {node.getName()}</div>} />, { container });
 
             await new Promise((resolve) => setTimeout(resolve, 100));
 
@@ -215,7 +215,7 @@ describe("Layout Features", () => {
     describe("Multiple Tabsets", () => {
         it("renders multiple tabsets", async () => {
             const model = Model.fromJson(multiTabsetModel);
-            render(<Layout model={model} factory={(node) => <div>Content {node.getName()}</div>} />, { container });
+            await render(<Layout model={model} factory={(node) => <div>Content {node.getName()}</div>} />, { container });
 
             await new Promise((resolve) => setTimeout(resolve, 100));
 
@@ -225,7 +225,7 @@ describe("Layout Features", () => {
 
         it("highlights first tabset by default", async () => {
             const model = Model.fromJson(multiTabsetModel);
-            render(<Layout model={model} factory={(node) => <div>Content {node.getName()}</div>} />, { container });
+            await render(<Layout model={model} factory={(node) => <div>Content {node.getName()}</div>} />, { container });
 
             await new Promise((resolve) => setTimeout(resolve, 100));
 
@@ -238,7 +238,7 @@ describe("Layout Features", () => {
 
         it("changes active tabset when clicking tab content in another tabset", async () => {
             const model = Model.fromJson(multiTabsetModel);
-            render(<Layout model={model} factory={(node) => <div>Content {node.getName()}</div>} />, { container });
+            await render(<Layout model={model} factory={(node) => <div>Content {node.getName()}</div>} />, { container });
 
             await new Promise((resolve) => setTimeout(resolve, 100));
 
@@ -256,7 +256,7 @@ describe("Layout Features", () => {
     describe("Border Tabs", () => {
         it("renders border tabs", async () => {
             const model = Model.fromJson(borderModel);
-            render(<Layout model={model} factory={(node) => <div>Content {node.getName()}</div>} />, { container });
+            await render(<Layout model={model} factory={(node) => <div>Content {node.getName()}</div>} />, { container });
 
             await new Promise((resolve) => setTimeout(resolve, 100));
 
@@ -266,7 +266,7 @@ describe("Layout Features", () => {
 
         it("shows border tab content when clicked", async () => {
             const model = Model.fromJson(borderModel);
-            render(<Layout model={model} factory={(node) => <div>Content {node.getName()}</div>} />, { container });
+            await render(<Layout model={model} factory={(node) => <div>Content {node.getName()}</div>} />, { container });
 
             await new Promise((resolve) => setTimeout(resolve, 100));
 
@@ -281,7 +281,7 @@ describe("Layout Features", () => {
 
         it("hides border tab content when clicked again", async () => {
             const model = Model.fromJson(borderModel);
-            render(<Layout model={model} factory={(node) => <div>Content {node.getName()}</div>} />, { container });
+            await render(<Layout model={model} factory={(node) => <div>Content {node.getName()}</div>} />, { container });
 
             await new Promise((resolve) => setTimeout(resolve, 100));
 
@@ -323,7 +323,7 @@ describe("Layout Features", () => {
             };
 
             const model = Model.fromJson(modelWithMaximize);
-            render(<Layout model={model} factory={(node) => <div>Content {node.getName()}</div>} />, { container });
+            await render(<Layout model={model} factory={(node) => <div>Content {node.getName()}</div>} />, { container });
 
             await new Promise((resolve) => setTimeout(resolve, 100));
 
@@ -335,9 +335,9 @@ describe("Layout Features", () => {
     describe("Drag and Drop", () => {
         it("enters drag state when dragging tab", async () => {
             const model = Model.fromJson(multiTabsetModel);
-            let dragStateChanges: boolean[] = [];
+            const dragStateChanges: boolean[] = [];
 
-            render(
+            await render(
                 <Layout
                     model={model}
                     factory={(node) => <div>Content {node.getName()}</div>}
@@ -418,7 +418,7 @@ describe("Layout Features", () => {
             };
 
             const model = Model.fromJson(manyTabsModel);
-            render(<Layout model={model} factory={(node) => <div>Content {node.getName()}</div>} />, { container });
+            await render(<Layout model={model} factory={(node) => <div>Content {node.getName()}</div>} />, { container });
 
             await new Promise((resolve) => setTimeout(resolve, 200));
 
@@ -432,7 +432,7 @@ describe("Layout Features", () => {
             const model = Model.fromJson(basicModel);
             let changeCallCount = 0;
 
-            render(
+            await render(
                 <Layout
                     model={model}
                     factory={(node) => <div>Content {node.getName()}</div>}
@@ -457,7 +457,7 @@ describe("Layout Features", () => {
         it("intercepts actions and can prevent them", async () => {
             const model = Model.fromJson(basicModel);
 
-            render(
+            await render(
                 <Layout
                     model={model}
                     factory={(node) => <div>Content {node.getName()}</div>}

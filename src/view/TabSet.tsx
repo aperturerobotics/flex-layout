@@ -41,10 +41,10 @@ export const TabSet = (props: ITabSetProps) => {
         node.setRect(layout.getBoundingClientRect(selfRef.current!));
 
         if (tabStripRef.current) {
-            node.setTabStripRect(layout.getBoundingClientRect(tabStripRef.current!));
+            node.setTabStripRect(layout.getBoundingClientRect(tabStripRef.current));
         }
 
-        const newContentRect = Rect.getContentRect(contentRef.current!).relativeTo(layout.getDomRect()!);
+        const newContentRect = Rect.getContentRect(contentRef.current!).relativeTo(layout.getDomRect());
         const oldContentRect = node.getContentRect();
         if (!oldContentRect.equals(newContentRect)) {
             node.setContentRect(newContentRect);
@@ -54,7 +54,7 @@ export const TabSet = (props: ITabSetProps) => {
             const oldWasEmpty = oldContentRect.width === 0 && oldContentRect.height === 0;
             const shouldRedraw = !isFirstRender.current || oldWasEmpty;
             if (shouldRedraw) {
-                layout.redrawInternal("tabset content rect " + newContentRect);
+                layout.redrawInternal("tabset content rect " + newContentRect.toString());
             }
         }
         isFirstRender.current = false;
@@ -83,7 +83,7 @@ export const TabSet = (props: ITabSetProps) => {
         if (!layout.getEditingTab()) {
             if (node.isEnableDrag()) {
                 event.stopPropagation();
-                layout.setDragNode(event.nativeEvent, node as TabSetNode);
+                layout.setDragNode(event.nativeEvent, node);
             } else {
                 event.preventDefault();
             }
@@ -143,7 +143,7 @@ export const TabSet = (props: ITabSetProps) => {
         event.stopPropagation();
     };
 
-    const onDoubleClick = (event: React.MouseEvent<HTMLElement, MouseEvent>) => {
+    const onDoubleClick = (_event: React.MouseEvent<HTMLElement, MouseEvent>) => {
         if (node.canMaximize()) {
             layout.maximize(node);
         }
@@ -154,7 +154,7 @@ export const TabSet = (props: ITabSetProps) => {
     const cm = layout.getClassName;
 
     // tabbar inner can get shifted left via tab rename, this resets scrollleft to 0
-    if (tabStripInnerRef.current !== null && tabStripInnerRef.current!.scrollLeft !== 0) {
+    if (tabStripInnerRef.current !== null && tabStripInnerRef.current.scrollLeft !== 0) {
         tabStripInnerRef.current.scrollLeft = 0;
     }
 
@@ -223,7 +223,7 @@ export const TabSet = (props: ITabSetProps) => {
                     </>
                 );
             }
-            buttons.splice(
+            void buttons.splice(
                 Math.min(renderState.overflowPosition, buttons.length),
                 0,
                 <button
@@ -424,7 +424,7 @@ export const TabSet = (props: ITabSetProps) => {
         );
     }
 
-    const style: Record<string, any> = {
+    const style: Record<string, string | number> = {
         flexGrow: Math.max(1, node.getWeight() * 1000),
         minWidth: node.getMinWidth(),
         minHeight: node.getMinHeight(),

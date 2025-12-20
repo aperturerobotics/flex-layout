@@ -25,7 +25,7 @@ export const BorderButton = (props: IBorderButtonProps) => {
     const onDragStart = (event: React.DragEvent<HTMLElement>) => {
         if (node.isEnableDrag()) {
             event.stopPropagation();
-            layout.setDragNode(event.nativeEvent, node as TabNode);
+            layout.setDragNode(event.nativeEvent, node);
         } else {
             event.preventDefault();
         }
@@ -61,14 +61,14 @@ export const BorderButton = (props: IBorderButtonProps) => {
     //     layout.getCurrentDocument()!.body.addEventListener("pointerdown", onEndEdit);
     // };
 
-    const onEndEdit = (event: Event) => {
+    const _onEndEdit = (event: Event) => {
         if (event.target !== contentRef.current!) {
-            layout.getCurrentDocument()!.body.removeEventListener("pointerdown", onEndEdit);
+            layout.getCurrentDocument()!.body.removeEventListener("pointerdown", _onEndEdit);
             layout.setEditingTab(undefined);
         }
     };
 
-    const onClose = (event: React.MouseEvent<HTMLElement>) => {
+    const onClose = (_event: React.MouseEvent<HTMLElement>) => {
         if (isTabClosable(node, selected)) {
             layout.doAction(Actions.deleteTab(node.getId()));
         } else {
@@ -84,7 +84,7 @@ export const BorderButton = (props: IBorderButtonProps) => {
     React.useLayoutEffect(() => {
         node.setTabRect(layout.getBoundingClientRect(selfRef.current!));
         if (layout.getEditingTab() === node) {
-            (contentRef.current! as HTMLInputElement).select();
+            contentRef.current!.select();
         }
     });
 

@@ -28,7 +28,7 @@ export function getRenderStateEx(layout: LayoutInternal, node: TabNode, iconAngl
         }
     }
 
-    const buttons: any[] = [];
+    const buttons: React.ReactNode[] = [];
 
     // allow customization of leading contents (icon) and contents
     const renderState = { leading: leadingContent, content: titleContent, name, buttons };

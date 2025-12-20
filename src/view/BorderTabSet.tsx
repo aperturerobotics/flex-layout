@@ -32,7 +32,7 @@ export const BorderTabSet = (props: IBorderTabSetProps) => {
 
     // Measure and set the tab header rect after each render
     React.useLayoutEffect(() => {
-        border.setTabHeaderRect(Rect.getBoundingClientRect(selfRef.current!).relativeTo(layout.getDomRect()!));
+        border.setTabHeaderRect(Rect.getBoundingClientRect(selfRef.current!).relativeTo(layout.getDomRect()));
     });
 
     const { selfRef, position, userControlledLeft, hiddenTabs, onMouseWheel, tabsTruncated } = useTabOverflow(border, Orientation.flip(border.getOrientation()), toolbarRef, stickyButtonsRef);
@@ -77,7 +77,7 @@ export const BorderTabSet = (props: IBorderTabSetProps) => {
 
     const cm = layout.getClassName;
 
-    const tabButtons: any = [];
+    const tabButtons: React.ReactNode[] = [];
 
     const layoutTab = (i: number) => {
         const isSelected = border.getSelected() === i;
@@ -101,8 +101,8 @@ export const BorderTabSet = (props: IBorderTabSetProps) => {
     }
 
     // allow customization of tabset right/bottom buttons
-    let buttons: any[] = [];
-    const stickyButtons: any[] = [];
+    let buttons: React.ReactNode[] = [];
+    const stickyButtons: React.ReactNode[] = [];
     const renderState: ITabSetRenderValues = { buttons, stickyButtons: stickyButtons, overflowPosition: undefined };
     layout.customizeTabSet(border, renderState);
     buttons = renderState.buttons;
@@ -144,7 +144,7 @@ export const BorderTabSet = (props: IBorderTabSetProps) => {
                 </>
             );
         }
-        buttons.splice(
+        void buttons.splice(
             Math.min(renderState.overflowPosition, buttons.length),
             0,
             <button

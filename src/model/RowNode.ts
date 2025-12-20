@@ -1,6 +1,6 @@
 import { TabNode } from "./TabNode";
 import { Attribute } from "../Attribute";
-import { AttributeDefinitions } from "../AttributeDefinitions";
+import { AttributeDefinitions, AttributeRecord, JsonInput } from "../AttributeDefinitions";
 import { DockLocation } from "../DockLocation";
 import { DropInfo } from "../DropInfo";
 import { Orientation } from "../Orientation";
@@ -19,8 +19,8 @@ export class RowNode extends Node implements IDropTarget {
     static readonly TYPE = "row";
 
     /** @internal */
-    static fromJson(json: any, model: Model, layoutWindow: LayoutWindow) {
-        const newLayoutNode = new RowNode(model, layoutWindow.windowId, json);
+    static fromJson(json: IJsonRowNode, model: Model, layoutWindow: LayoutWindow) {
+        const newLayoutNode = new RowNode(model, layoutWindow.windowId, json as unknown as JsonInput);
 
         if (json.children != null) {
             for (const jsonChild of json.children) {
@@ -52,7 +52,7 @@ export class RowNode extends Node implements IDropTarget {
     private maxWidth: number;
 
     /** @internal */
-    constructor(model: Model, windowId: string, json: any) {
+    constructor(model: Model, windowId: string, json: JsonInput) {
         super(model);
 
         this.windowId = windowId;
@@ -70,15 +70,15 @@ export class RowNode extends Node implements IDropTarget {
     }
 
     toJson(): IJsonRowNode {
-        const json: any = {};
-        RowNode.attributeDefinitions.toJson(json, this.attributes);
+        const json: Record<string, unknown> = {};
+        RowNode.attributeDefinitions.toJson(json as AttributeRecord, this.attributes);
 
         json.children = [];
         for (const child of this.children) {
-            json.children.push(child.toJson());
+            (json.children as unknown[]).push(child.toJson());
         }
 
-        return json;
+        return json as unknown as IJsonRowNode;
     }
 
     /** @internal */
@@ -357,9 +357,9 @@ export class RowNode extends Node implements IDropTarget {
         // add tabset into empty root
         if (this === this.model.getRoot(this.windowId) && this.children.length === 0) {
             const callback = this.model.getOnCreateTabSet();
-            let attrs = callback ? callback() : {};
-            attrs = { ...attrs, selected: -1 };
-            const child = new TabSetNode(this.model, attrs);
+            const baseAttrs = callback ? callback() : {};
+            const attrs = { ...baseAttrs, selected: -1 };
+            const child = new TabSetNode(this.model, attrs as unknown as JsonInput);
             this.model.setActiveTabset(child, this.windowId);
             this.addChild(child);
         }
@@ -424,11 +424,11 @@ export class RowNode extends Node implements IDropTarget {
             parent.removeChild(dragNode);
         }
 
-        if (parent !== undefined && parent! instanceof TabSetNode) {
+        if (parent !== undefined && parent instanceof TabSetNode) {
             parent.setSelected(0);
         }
 
-        if (parent !== undefined && parent! instanceof BorderNode) {
+        if (parent !== undefined && parent instanceof BorderNode) {
             parent.setSelected(-1);
         }
 
@@ -442,7 +442,8 @@ export class RowNode extends Node implements IDropTarget {
             }
         } else {
             const callback = this.model.getOnCreateTabSet();
-            node = new TabSetNode(this.model, callback ? callback(dragNode as TabNode) : {});
+            const attrs = callback ? callback(dragNode as TabNode) : {};
+            node = new TabSetNode(this.model, attrs as unknown as JsonInput);
             node.addChild(dragNode);
         }
         let size = this.children.reduce((sum, child) => {
@@ -510,7 +511,7 @@ export class RowNode extends Node implements IDropTarget {
     }
 
     /** @internal */
-    updateAttrs(json: any) {
+    updateAttrs(json: JsonInput) {
         RowNode.attributeDefinitions.update(json, this.attributes);
     }
 

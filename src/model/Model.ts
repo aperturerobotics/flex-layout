@@ -1,5 +1,5 @@
-import { Attribute } from "../Attribute";
-import { AttributeDefinitions } from "../AttributeDefinitions";
+import { Attribute, AttributeValue } from "../Attribute";
+import { AttributeDefinitions, AttributeRecord, JsonInput } from "../AttributeDefinitions";
 import { DockLocation } from "../DockLocation";
 import { DropInfo } from "../DropInfo";
 import { Rect } from "../Rect";
@@ -9,7 +9,7 @@ import { BorderNode } from "./BorderNode";
 import { BorderSet } from "./BorderSet";
 import { IDraggable } from "./IDraggable";
 import { IDropTarget } from "./IDropTarget";
-import { IJsonModel, IJsonPopout, ITabSetAttributes } from "./IJsonModel";
+import { IJsonModel, IJsonPopout, IJsonRowNode, ITabSetAttributes } from "./IJsonModel";
 import { Node } from "./Node";
 import { RowNode } from "./RowNode";
 import { TabNode } from "./TabNode";
@@ -33,7 +33,7 @@ export class Model {
     private static attributeDefinitions: AttributeDefinitions = Model.createAttributeDefinitions();
 
     /** @internal */
-    private attributes: Record<string, any>;
+    private attributes: AttributeRecord;
     /** @internal */
     private idMap: Map<string, Node>;
     /** @internal */
@@ -69,7 +69,7 @@ export class Model {
      * @param action the action to perform
      * @returns added Node for Actions.addNode, windowId for createWindow
      */
-    doAction(action: Action): any {
+    doAction(action: Action): Node | string | undefined {
         let returnVal = undefined;
         // console.log(action);
         switch (action.type) {
@@ -137,7 +137,7 @@ export class Model {
                     const json = {
                         type: "row",
                         children: [],
-                    };
+                    } as IJsonRowNode;
                     const row = RowNode.fromJson(json, this, layoutWindow);
                     layoutWindow.root = row;
                     this.windows.set(windowId, layoutWindow);
@@ -164,8 +164,8 @@ export class Model {
                     const layoutWindow = new LayoutWindow(windowId, oldLayoutWindow.toScreenRectFunction(r));
                     const tabsetId = randomUUID();
                     const json = {
-                        type: "row",
-                        children: [{ type: "tabset", id: tabsetId }],
+                        type: "row" as const,
+                        children: [{ type: "tabset" as const, id: tabsetId, children: [] }],
                     };
                     const row = RowNode.fromJson(json, this, layoutWindow);
                     layoutWindow.root = row;
@@ -180,8 +180,8 @@ export class Model {
             case Actions.CLOSE_WINDOW: {
                 const window = this.windows.get(action.data.windowId);
                 if (window) {
-                    this.rootWindow.root?.drop(window?.root!, DockLocation.CENTER, -1);
-                    this.rootWindow.visitNodes((node, level) => {
+                    this.rootWindow.root?.drop(window.root!, DockLocation.CENTER, -1);
+                    this.rootWindow.visitNodes((node, _level) => {
                         if (node instanceof RowNode) {
                             node.setWindowId(Model.MAIN_WINDOW_ID);
                         }
@@ -395,7 +395,7 @@ export class Model {
      */
     static fromJson(json: IJsonModel) {
         const model = new Model();
-        Model.attributeDefinitions.fromJson(json.global, model.attributes);
+        Model.attributeDefinitions.fromJson((json.global ?? {}) as JsonInput, model.attributes);
 
         if (json.borders) {
             model.borders = BorderSet.fromJson(json.borders, model);
@@ -426,8 +426,8 @@ export class Model {
      * @returns {IJsonModel} json object that represents this model
      */
     toJson(): IJsonModel {
-        const global: any = {};
-        Model.attributeDefinitions.toJson(global, this.attributes);
+        const global: Record<string, unknown> = {};
+        Model.attributeDefinitions.toJson(global as AttributeRecord, this.attributes);
 
         // save state of nodes
         this.visitNodes((node) => {
@@ -587,7 +587,7 @@ export class Model {
     }
 
     /** @internal */
-    updateAttrs(json: any) {
+    updateAttrs(json: JsonInput) {
         Model.attributeDefinitions.update(json, this.attributes);
     }
 
@@ -597,7 +597,7 @@ export class Model {
     }
 
     /** @internal */
-    getAttribute(name: string): any {
+    getAttribute(name: string): AttributeValue {
         return this.attributes[name];
     }
 

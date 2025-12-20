@@ -76,8 +76,11 @@ export const Splitter = (props: ISplitterProps) => {
             outlineDiv.current.appendChild(handleDiv.current);
         }
 
-        const r = selfRef.current?.getBoundingClientRect()!;
-        const rect = new Rect(r.x - layout.getDomRect()!.x, r.y - layout.getDomRect()!.y, r.width, r.height);
+        const r = selfRef.current?.getBoundingClientRect();
+        if (!r) {
+            return;
+        }
+        const rect = new Rect(r.x - layout.getDomRect().x, r.y - layout.getDomRect().y, r.width, r.height);
 
         dragStartX.current = event.clientX - r.x;
         dragStartY.current = event.clientY - r.y;
@@ -106,9 +109,9 @@ export const Splitter = (props: ISplitterProps) => {
                 return;
             }
             if (node.getOrientation() === Orientation.VERT) {
-                outlineDiv.current!.style.top = getBoundPosition(y - clientRect.y - dragStartY.current) + "px";
+                outlineDiv.current.style.top = getBoundPosition(y - clientRect.y - dragStartY.current) + "px";
             } else {
-                outlineDiv.current!.style.left = getBoundPosition(x - clientRect.x - dragStartX.current) + "px";
+                outlineDiv.current.style.left = getBoundPosition(x - clientRect.x - dragStartX.current) + "px";
             }
 
             if (layout.isRealtimeResize()) {
@@ -131,18 +134,19 @@ export const Splitter = (props: ISplitterProps) => {
         setDragging(false);
     };
 
-    const updateLayout = (realtime: boolean) => {
+    const updateLayout = (_realtime: boolean) => {
+        void _realtime;
         const redraw = () => {
             if (outlineDiv.current) {
                 let value = 0;
                 if (node.getOrientation() === Orientation.VERT) {
-                    value = outlineDiv.current!.offsetTop;
+                    value = outlineDiv.current.offsetTop;
                 } else {
-                    value = outlineDiv.current!.offsetLeft;
+                    value = outlineDiv.current.offsetLeft;
                 }
 
                 if (node instanceof BorderNode) {
-                    const pos = (node as BorderNode).calculateSplit(node, value);
+                    const pos = node.calculateSplit(node, value);
                     layout.doAction(Actions.adjustBorderSplit(node.getId(), pos));
                 } else {
                     const init = initalSizes.current;
@@ -156,7 +160,7 @@ export const Splitter = (props: ISplitterProps) => {
     };
 
     const getBoundPosition = (p: number) => {
-        const bounds = pBounds.current as number[];
+        const bounds = pBounds.current;
         let rtn = p;
         if (p < bounds[0]) {
             rtn = bounds[0];
@@ -169,7 +173,7 @@ export const Splitter = (props: ISplitterProps) => {
     };
 
     const cm = layout.getClassName;
-    const style: Record<string, any> = {
+    const style: Record<string, string | number> = {
         cursor: horizontal ? "ew-resize" : "ns-resize",
         flexDirection: horizontal ? "column" : "row",
     };
@@ -205,7 +209,7 @@ export const Splitter = (props: ISplitterProps) => {
     } else {
         // add extended transparent div for hit testing
 
-        const style2: Record<string, any> = {};
+        const style2: Record<string, string | number> = {};
         if (node.getOrientation() === Orientation.HORZ) {
             style2.height = "100%";
             style2.width = size + extra + "px";

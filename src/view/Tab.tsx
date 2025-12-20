@@ -21,7 +21,7 @@ export const Tab = (props: ITabProps) => {
     const firstSelect = React.useRef<boolean>(true);
 
     const parentNode = node.getParent() as TabSetNode | BorderNode;
-    const rect = parentNode.getContentRect()!;
+    const rect = parentNode.getContentRect();
 
     React.useLayoutEffect(() => {
         const element = node.getMoveableElement()!;
@@ -74,7 +74,7 @@ export const Tab = (props: ITabProps) => {
     };
 
     const cm = layout.getClassName;
-    const style: Record<string, any> = {};
+    const style: Record<string, string | number> = {};
 
     rect.styleWithPosition(style);
 
@@ -82,7 +82,7 @@ export const Tab = (props: ITabProps) => {
 
     if (selected) {
         if (document.hidden && node.isEnablePopoutOverlay()) {
-            const overlayStyle: Record<string, any> = {};
+            const overlayStyle: Record<string, string | number> = {};
             rect.styleWithPosition(overlayStyle);
             overlay = <div style={overlayStyle} className={cm(CLASSES.FLEXLAYOUT__TAB_OVERLAY)}></div>;
         }

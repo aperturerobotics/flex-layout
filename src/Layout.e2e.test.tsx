@@ -49,7 +49,7 @@ describe("Layout E2E", () => {
 
     it("renders Layout with tabs", async () => {
         const model = Model.fromJson(jsonModel);
-        render(<Layout model={model} factory={(node) => <div data-testid={`content-${node.getId()}`}>Content for {node.getName()}</div>} />, { container });
+        await render(<Layout model={model} factory={(node) => <div data-testid={`content-${node.getId()}`}>Content for {node.getName()}</div>} />, { container });
 
         // Wait for layout to render
         await new Promise((resolve) => setTimeout(resolve, 100));
@@ -64,13 +64,13 @@ describe("Layout E2E", () => {
         const model = Model.fromJson(jsonModel);
         let selectedTabId = "tab1"; // First tab is selected by default
 
-        render(
+        await render(
             <Layout
                 model={model}
                 factory={(node) => <div data-testid={`content-${node.getId()}`}>Content for {node.getName()}</div>}
                 onModelChange={(_newModel, action) => {
                     if (action.type === Actions.SELECT_TAB) {
-                        selectedTabId = (action as any).data.tabNode;
+                        selectedTabId = action.data.tabNode;
                     }
                 }}
             />,
@@ -97,7 +97,7 @@ describe("Layout E2E", () => {
         const model = Model.fromJson(jsonModel);
         const dragStates: boolean[] = [];
 
-        render(
+        await render(
             <Layout
                 model={model}
                 factory={(node) => <div data-testid={`content-${node.getId()}`}>Content for {node.getName()}</div>}
@@ -169,7 +169,7 @@ describe("Layout E2E", () => {
     it("shows drag overlay when dragging over layout", async () => {
         const model = Model.fromJson(jsonModel);
 
-        render(<Layout model={model} factory={(node) => <div data-testid={`content-${node.getId()}`}>Content for {node.getName()}</div>} />, { container });
+        await render(<Layout model={model} factory={(node) => <div data-testid={`content-${node.getId()}`}>Content for {node.getName()}</div>} />, { container });
 
         // Wait for layout to render
         await new Promise((resolve) => setTimeout(resolve, 100));

@@ -22,7 +22,7 @@ export function adjustSelectedIndexAfterDock(node: TabNode) {
 export function adjustSelectedIndex(parent: TabSetNode | BorderNode | RowNode, removedIndex: number) {
     // for the tabset/border being removed from set the selected index
     if (parent !== undefined && (parent instanceof TabSetNode || parent instanceof BorderNode)) {
-        const selectedIndex = (parent as TabSetNode | BorderNode).getSelected();
+        const selectedIndex = parent.getSelected();
         if (selectedIndex !== -1) {
             if (removedIndex === selectedIndex && parent.getChildren().length > 0) {
                 if (removedIndex >= parent.getChildren().length) {
@@ -43,6 +43,6 @@ export function adjustSelectedIndex(parent: TabSetNode | BorderNode | RowNode, r
 }
 
 export function randomUUID(): string {
-    // @ts-ignore
-    return ([1e7] + -1e3 + -4e3 + -8e3 + -1e11).replace(/[018]/g, (c) => (c ^ (crypto.getRandomValues(new Uint8Array(1))[0] & (15 >> (c / 4)))).toString(16));
+    // @ts-expect-error: crypto.getRandomValues requires this for UUID generation
+    return (String([1e7]) + -1e3 + -4e3 + -8e3 + -1e11).replace(/[018]/g, (c) => (c ^ (crypto.getRandomValues(new Uint8Array(1))[0] & (15 >> (c / 4)))).toString(16));
 }

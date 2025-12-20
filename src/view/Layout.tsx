@@ -55,7 +55,7 @@ export interface ILayoutProps {
     onExternalDrag?: (event: React.DragEvent<HTMLElement>) =>
         | undefined
         | {
-              json: any;
+              json: IJsonTabNode;
               onDrop?: (node?: Node, event?: React.DragEvent<HTMLElement>) => void;
           };
     /** function called with default css class name, return value is class name that will be used. Mainly for use with css modules. */
@@ -571,7 +571,7 @@ export class LayoutInternal extends React.Component<ILayoutInternalProps, ILayou
 
         this.props.model.visitNodes((node) => {
             if (node instanceof TabNode) {
-                const child = node as TabNode;
+                const child = node;
                 const element = this.getMoveableElement(child.getId());
                 child.setMoveableElement(element);
                 const selected = child.isSelected();
@@ -606,7 +606,7 @@ export class LayoutInternal extends React.Component<ILayoutInternalProps, ILayou
 
         this.props.model.visitNodes((node) => {
             if (node instanceof TabNode) {
-                const child = node as TabNode;
+                const child = node;
 
                 // what the tab should look like when dragged (since images need to have been loaded before drag image can be taken)
                 tabStamps.push(<DragContainer key={child.getId()} layout={this} node={child} />);
@@ -620,7 +620,7 @@ export class LayoutInternal extends React.Component<ILayoutInternalProps, ILayou
         const tabs = new Map<string, React.ReactNode>();
         this.props.model.visitWindowNodes(this.windowId, (node) => {
             if (node instanceof TabNode) {
-                const child = node as TabNode;
+                const child = node;
                 const selected = child.isSelected();
                 const path = child.getPath();
 
@@ -757,7 +757,7 @@ export class LayoutInternal extends React.Component<ILayoutInternalProps, ILayou
         });
     }
 
-    doAction(action: Action): Node | undefined {
+    doAction(action: Action): Node | string | undefined {
         if (this.props.onAction !== undefined) {
             const outcome = this.props.onAction(action);
             if (outcome !== undefined) {
@@ -908,7 +908,7 @@ export class LayoutInternal extends React.Component<ILayoutInternalProps, ILayou
     }
 
     showControlInPortal = (control: React.ReactNode, element: HTMLElement) => {
-        const portal = createPortal(control, element) as React.ReactPortal;
+        const portal = createPortal(control, element);
         this.setState({ portal });
     };
 
@@ -1016,7 +1016,7 @@ export class LayoutInternal extends React.Component<ILayoutInternalProps, ILayou
             const offsetX = event.clientX - rect.left;
             const offsetY = event.clientY - rect.top;
             const parentNode = node?.getParent();
-            const isInVerticalBorder = parentNode instanceof BorderNode && (parentNode as BorderNode).getOrientation() === Orientation.HORZ;
+            const isInVerticalBorder = parentNode instanceof BorderNode && parentNode.getOrientation() === Orientation.HORZ;
             const x = isInVerticalBorder ? 10 : offsetX;
             const y = isInVerticalBorder ? 10 : offsetY;
 
@@ -1057,7 +1057,7 @@ export class LayoutInternal extends React.Component<ILayoutInternalProps, ILayou
 
         event.dataTransfer!.setDragImage(tempDiv, x, y);
         setTimeout(() => {
-            this.currentDocument!.body.removeChild(tempDiv!);
+            this.currentDocument!.body.removeChild(tempDiv);
         }, 0);
     }
 
@@ -1065,7 +1065,7 @@ export class LayoutInternal extends React.Component<ILayoutInternalProps, ILayou
         // console.log("setDraggingOverWindow", overWindow);
         if (this.isDraggingOverWindow !== overWindow) {
             if (this.outlineDiv) {
-                this.outlineDiv!.style.visibility = overWindow ? "hidden" : "visible";
+                this.outlineDiv.style.visibility = overWindow ? "hidden" : "visible";
             }
 
             if (overWindow) {
@@ -1125,7 +1125,7 @@ export class LayoutInternal extends React.Component<ILayoutInternalProps, ILayou
 
         if (!LayoutInternal.dragState && this.props.onExternalDrag) {
             // not internal dragging
-            const externalDrag = this.props.onExternalDrag!(event);
+            const externalDrag = this.props.onExternalDrag(event);
             if (externalDrag) {
                 const tempNode = TabNode.fromJson(externalDrag.json, this.props.model, false);
                 LayoutInternal.dragState = new DragState(this.mainLayout, DragSource.External, tempNode, externalDrag.json, externalDrag.onDrop);
@@ -1161,7 +1161,7 @@ export class LayoutInternal extends React.Component<ILayoutInternalProps, ILayou
                 this.setState({ showEdges: this.props.model.isEnableEdgeDock() });
             }
 
-            const clientRect = this.selfRef.current?.getBoundingClientRect()!;
+            const clientRect = this.selfRef.current!.getBoundingClientRect();
             const r = new Rect(event.clientX - clientRect.left, event.clientY - clientRect.top, 1, 1);
             r.positionElement(this.outlineDiv);
         }
@@ -1212,7 +1212,7 @@ export class LayoutInternal extends React.Component<ILayoutInternalProps, ILayou
             const dragState = LayoutInternal.dragState!;
             if (this.dropInfo) {
                 if (dragState.dragJson !== undefined) {
-                    const newNode = this.doAction(Actions.addNode(dragState.dragJson, this.dropInfo.node.getId(), this.dropInfo.location, this.dropInfo.index));
+                    const newNode = this.doAction(Actions.addNode(dragState.dragJson, this.dropInfo.node.getId(), this.dropInfo.location, this.dropInfo.index)) as Node | undefined;
 
                     if (dragState.fnNewNodeDropped !== undefined) {
                         dragState.fnNewNodeDropped(newNode, event);
