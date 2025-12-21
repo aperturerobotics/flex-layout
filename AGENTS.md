@@ -24,28 +24,20 @@ Avoid using sub-agents unless absolutely necessary.
 - DO NOT use `else` statements unless necessary
 - DO NOT use `try`/`catch` if it can be avoided
 - DO NOT make git commits
-- DO NOT modify `bldr.yaml` (ignore any changes in this file) aside from `rev` unless asked
-- DO NOT assume the size in pixels of utilities like h-4 and h-16 these are dependent on var(--spacing)
-- DO NOT use className string interpolation (use `cn()` from `@web/style/utils.js` instead)
 - DO NOT use emojis or obvious comments
-- DO NOT use polling, always wait properly, like using a channel receive in go
 - DO NOT add obvious comments like "(not persisted)" or "(ephemeral UI state)"
 - DO NOT disable linter warnings unless absolutely necessary - if you need to disable a linter warning, it usually means you are doing something wrong and should rethink your approach
 - AVOID using `any` type
 - AVOID `let` statements
 - AVOID `as` statements (pretty much never use them)
 - AVOID using refs to store mutable state that affects rendering - use proper React state instead
-- AVOID gradients in css as these have inconsistent rendering between browser engines
 - PREFER single word variable names where possible
 - PREFER to merge multiple `useState` together into one if applicable (or even use a reducer if prudent)
-- PREFER `cn()` for conditional className composition
 - PREFER using useCallback or useMemo to memoize and keep good React performance
 - PREFER function declarations over arrow function expressions for React components (e.g., `export function MyComponent()` over `export const MyComponent = () =>`)
 - PREFER optional chaining for callback invocations (e.g., `onRowClick?.(index, item, e)` over `if (onRowClick) { onRowClick(index, item, e) }`)
 - ALWAYS investigate all existing implementation details before making changes
-- ALWAYS limit your searches or dir listings to the relevant project subdir(s) ./{project}/...
 - ALWAYS import useMemo, useCallback, etc, instead of using React.useMemo, React.useCallback, etc.
-- NOTE that generated files like _.pb_ are ignored from ripgrep (rg)
 - NOTE that ripgrep does not have a built-in `tsx` type; use `-g "*.tsx"` instead of `--type tsx`
 
 ## Component Structure
@@ -60,15 +52,23 @@ Follow React conventions for component organization:
 - **Co-locate related code** - Keep types, helpers, and sub-components in the same file unless they're reusable elsewhere
 - **Types in component files** - For component-related types (props, interfaces), use `component.ts` instead of `types.ts` (e.g., `object.ts` instead of `types.ts` for object-related types)
 
-## Styling
+## Comments
 
-### Flexbox Scroll Containers
+When adding comments to components, functions, or files:
 
-Virtualized or scrollable regions only gain scrollbars when their parent is constrained by flex layout:
+- Use the format: `// ComponentName does something specific.`
+- Start with the component/function/class name followed by a verb
+- End with a period
+- Keep it concise and descriptive
 
-- Wrap scroll areas in a `flex flex-col` container with `flex-1` **and** `min-h-0` to let the child size to the viewport.
-- Keep the scroll container itself `overflow-hidden` and let the virtualized list own its `overflow-y-auto` style.
-- Do **not** rely on padding wrappers or absolute positioning around `react-window`; constrain height via flex so content can exceed the container and trigger scrolling.
+Example:
+
+```tsx
+// TabContainer renders all tab content with absolute positioning.
+function TabContainer({ tabs, renderTab }: TabContainerProps) {
+  ...
+}
+```
 
 ## Imports
 
@@ -77,29 +77,21 @@ When importing from TypeScript (`.ts`) or JavaScript (`.js`) files:
 - ALWAYS use the `.js` suffix in the import path
 - This applies even when importing from `.ts` files
 - Group imports in the following order with blank lines between groups:
-  1. React and external libraries
-  2. Internal modules (using blank line separator for routing, hooks, state, SDK, etc.)
-  3. Local/relative imports
+    1. React and external libraries
+    2. Internal modules
+    3. Local/relative imports
 
 Example:
 
 ```tsx
 // Correct - grouped and organized
-import { useMemo, useCallback } from 'react'
-import { joinPath } from '@aptre/bldr'
-import { DebugInfo, useWatchStateRpc } from '@aptre/bldr-react'
+import { useMemo, useCallback } from "react";
 
-import { useNavigate, useParams, useRouter } from '@web/router/router.js'
-import { SharedObjectContext } from '@web/hooks/contexts.js'
-import { atomWithLocalStorage, StateNamespaceProvider } from '@web/state'
-import { Space } from '@s4wave/sdk/space/space.js'
-import { SpaceState, WatchStateRequest } from '@s4wave/sdk/space/space.pb.js'
+import { Rect } from "../Rect.js";
+import { Model } from "../model/Model.js";
+import { TabNode } from "../model/TabNode.js";
 
-import { SpaceProvider } from './SpaceContext.js'
-
-// Incorrect - no grouping or organization
-import { SpaceContainer } from '@web/space/SpaceContainer'
-import { SPACE_BODY_TYPE } from '@web/space/space'
+import { Layout } from "./Layout.js";
 ```
 
 ## Modern React Patterns
@@ -125,18 +117,18 @@ React 19.2 introduces `useEffectEvent` to separate non-reactive logic from effec
 
 ```tsx
 function ChatRoom({ roomId, userPreferences }) {
-  const onMessage = useEffectEvent((msg) => {
-    if (userPreferences.sound) {
-      // Always sees latest
-      playSound('ding.mp3')
-    }
-  })
+    const onMessage = useEffectEvent((msg) => {
+        if (userPreferences.sound) {
+            // Always sees latest
+            playSound("ding.mp3");
+        }
+    });
 
-  useEffect(() => {
-    const connection = connectToRoom(roomId)
-    connection.on('message', onMessage)
-    return () => connection.disconnect()
-  }, [roomId]) // Only re-runs when roomId changes
+    useEffect(() => {
+        const connection = connectToRoom(roomId);
+        connection.on("message", onMessage);
+        return () => connection.disconnect();
+    }, [roomId]); // Only re-runs when roomId changes
 }
 ```
 
@@ -144,16 +136,16 @@ function ChatRoom({ roomId, userPreferences }) {
 
 ```tsx
 function Page({ url }) {
-  const { items } = useContext(ShoppingCartContext)
-  const numberOfItems = items.length
+    const { items } = useContext(ShoppingCartContext);
+    const numberOfItems = items.length;
 
-  const onNavigate = useEffectEvent((visitedUrl) => {
-    logVisit(visitedUrl, numberOfItems)
-  })
+    const onNavigate = useEffectEvent((visitedUrl) => {
+        logVisit(visitedUrl, numberOfItems);
+    });
 
-  useEffect(() => {
-    onNavigate(url)
-  }, [url]) // Effect re-runs on url change, but not numberOfItems
+    useEffect(() => {
+        onNavigate(url);
+    }, [url]); // Effect re-runs on url change, but not numberOfItems
 }
 ```
 
@@ -179,16 +171,16 @@ Effects are an **escape hatch** from React. Use them only to synchronize with **
 **❌ Don't do this:**
 
 ```tsx
-const [fullName, setFullName] = useState('')
+const [fullName, setFullName] = useState("");
 useEffect(() => {
-  setFullName(firstName + ' ' + lastName)
-}, [firstName, lastName])
+    setFullName(firstName + " " + lastName);
+}, [firstName, lastName]);
 ```
 
 **✅ Do this instead:**
 
 ```tsx
-const fullName = firstName + ' ' + lastName
+const fullName = firstName + " " + lastName;
 ```
 
 ### 2. Caching Expensive Calculations
@@ -196,19 +188,16 @@ const fullName = firstName + ' ' + lastName
 **❌ Don't do this:**
 
 ```tsx
-const [visibleTodos, setVisibleTodos] = useState([])
+const [visibleTodos, setVisibleTodos] = useState([]);
 useEffect(() => {
-  setVisibleTodos(getFilteredTodos(todos, filter))
-}, [todos, filter])
+    setVisibleTodos(getFilteredTodos(todos, filter));
+}, [todos, filter]);
 ```
 
 **✅ Do this instead:**
 
 ```tsx
-const visibleTodos = useMemo(
-  () => getFilteredTodos(todos, filter),
-  [todos, filter],
-)
+const visibleTodos = useMemo(() => getFilteredTodos(todos, filter), [todos, filter]);
 ```
 
 ### 3. Resetting State on Prop Change
@@ -217,8 +206,8 @@ const visibleTodos = useMemo(
 
 ```tsx
 useEffect(() => {
-  setComment('')
-}, [userId])
+    setComment("");
+}, [userId]);
 ```
 
 **✅ Do this instead:**
@@ -233,14 +222,14 @@ useEffect(() => {
 
 ```tsx
 useEffect(() => {
-  setSelection(null)
-}, [items])
+    setSelection(null);
+}, [items]);
 ```
 
 **✅ Do this instead (calculate during render):**
 
 ```tsx
-const selection = items.find((item) => item.id === selectedId) ?? null
+const selection = items.find((item) => item.id === selectedId) ?? null;
 ```
 
 ### 5. Handling User Events
@@ -249,18 +238,18 @@ const selection = items.find((item) => item.id === selectedId) ?? null
 
 ```tsx
 useEffect(() => {
-  if (product.isInCart) {
-    showNotification(`Added ${product.name}`)
-  }
-}, [product])
+    if (product.isInCart) {
+        showNotification(`Added ${product.name}`);
+    }
+}, [product]);
 ```
 
 **✅ Do this instead:**
 
 ```tsx
 function handleBuyClick() {
-  addToCart(product)
-  showNotification(`Added ${product.name}`)
+    addToCart(product);
+    showNotification(`Added ${product.name}`);
 }
 ```
 
@@ -270,16 +259,16 @@ function handleBuyClick() {
 
 ```tsx
 useEffect(() => {
-  onChange(isOn)
-}, [isOn, onChange])
+    onChange(isOn);
+}, [isOn, onChange]);
 ```
 
 **✅ Do this instead:**
 
 ```tsx
 function handleClick() {
-  setIsOn(!isOn)
-  onChange(!isOn)
+    setIsOn(!isOn);
+    onChange(!isOn);
 }
 ```
 
@@ -289,26 +278,26 @@ function handleClick() {
 
 ```tsx
 useEffect(() => {
-  if (card?.gold) setGoldCardCount((c) => c + 1)
-}, [card])
+    if (card?.gold) setGoldCardCount((c) => c + 1);
+}, [card]);
 
 useEffect(() => {
-  if (goldCardCount > 3) setRound((r) => r + 1)
-}, [goldCardCount])
+    if (goldCardCount > 3) setRound((r) => r + 1);
+}, [goldCardCount]);
 ```
 
 **✅ Do this instead:**
 
 ```tsx
 function handlePlaceCard(nextCard) {
-  setCard(nextCard)
-  if (nextCard.gold) {
-    if (goldCardCount <= 3) {
-      setGoldCardCount(goldCardCount + 1)
-    } else {
-      setRound(round + 1)
+    setCard(nextCard);
+    if (nextCard.gold) {
+        if (goldCardCount <= 3) {
+            setGoldCardCount(goldCardCount + 1);
+        } else {
+            setRound(round + 1);
+        }
     }
-  }
 }
 ```
 
@@ -318,41 +307,41 @@ function handlePlaceCard(nextCard) {
 
 ```tsx
 useEffect(() => {
-  const connection = createConnection()
-  connection.connect()
-  return () => connection.disconnect()
-}, [])
+    const connection = createConnection();
+    connection.connect();
+    return () => connection.disconnect();
+}, []);
 ```
 
 ### 2. Fetching Data (with cleanup for race conditions)
 
 ```tsx
 useEffect(() => {
-  let ignore = false
-  fetchData().then((data) => {
-    if (!ignore) setData(data)
-  })
-  return () => {
-    ignore = true
-  }
-}, [query])
+    let ignore = false;
+    fetchData().then((data) => {
+        if (!ignore) setData(data);
+    });
+    return () => {
+        ignore = true;
+    };
+}, [query]);
 ```
 
 ### 3. Analytics/Logging (runs because component displayed)
 
 ```tsx
 useEffect(() => {
-  logPageView('/home')
-}, [])
+    logPageView("/home");
+}, []);
 ```
 
 ### 4. Subscribing to External Stores
 
 ```tsx
 useEffect(() => {
-  const unsubscribe = externalStore.subscribe(handleChange)
-  return () => unsubscribe()
-}, [])
+    const unsubscribe = externalStore.subscribe(handleChange);
+    return () => unsubscribe();
+}, []);
 ```
 
 #### Quick Decision Guide
@@ -364,3 +353,65 @@ Ask yourself: **Why does this code need to run?**
 - **Because the component was displayed to the user** → Effect
 - **Because I need to sync with something outside React** → Effect
 
+## Browser E2E Tests
+
+Browser E2E tests run React components in a real browser (Chromium via Playwright) using Vitest's browser mode. Tests are located in `src/*.e2e.test.tsx`.
+
+**Running browser tests:**
+
+```bash
+# Run all browser tests
+bun run test:browser
+
+# Run a specific test by name pattern
+npx vitest --config=vitest.browser.config.ts --run --testNamePattern="test name here"
+```
+
+**Simulating user interactions:**
+
+```tsx
+import { userEvent, page } from "vitest/browser";
+
+// Click events - prefer userEvent over element.click()
+await userEvent.click(element);
+// Or via locator
+await page.getByRole("button", { name: /submit/ }).click();
+
+// Fill input fields (faster than type, clears existing content)
+await userEvent.fill(input, "text value");
+// Or via locator
+await input.fill("text value");
+
+// Type with keyboard events (supports special keys like {Shift})
+await userEvent.type(input, "text{Enter}");
+
+// Keyboard events (for shortcuts, etc.)
+await userEvent.keyboard("{Control>}a{/Control}"); // Ctrl+A
+
+// Drag and drop (requires draggable="true" on source)
+await userEvent.dragAndDrop(source, target);
+// Or via locator
+await source.dropTo(target);
+
+// Hover
+await userEvent.hover(element);
+await element.hover();
+
+// Double/triple click
+await userEvent.dblClick(element);
+await userEvent.tripleClick(element);
+```
+
+**Polling for async conditions:**
+
+```tsx
+await expect
+    .poll(
+        () => {
+            const element = document.querySelector(".my-element");
+            return element !== null;
+        },
+        { timeout: 5000 },
+    )
+    .toBe(true);
+```

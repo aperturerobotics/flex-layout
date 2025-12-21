@@ -776,4 +776,353 @@ describe("OptimizedLayout", () => {
         // No action should have been dispatched since tabset was already active
         expect(actionCount).toBe(0);
     });
+
+    // Tests for excessive re-renders during drag operations
+    // See ISSUE.md for details on this bug
+
+    it("does not cause excessive re-renders during tab drag", async () => {
+        let renderCount = 0;
+
+        function TrackedContent({ name }: { name: string }) {
+            renderCount++;
+            return <div data-testid={`content-${name}`}>{name}</div>;
+        }
+
+        // Start with a single tab model
+        const singleTabModel: IJsonModel = {
+            global: {},
+            layout: {
+                type: "row",
+                children: [
+                    {
+                        type: "tabset",
+                        id: "tabset1",
+                        children: [{ type: "tab", name: "Tab 1", component: "test", id: "tab1" }],
+                    },
+                ],
+            },
+        };
+
+        const model = Model.fromJson(singleTabModel);
+        await render(<OptimizedLayout model={model} renderTab={(node) => <TrackedContent name={node.getName()} />} />, { container });
+
+        await new Promise((resolve) => setTimeout(resolve, 200));
+
+        // Add a second tab and select it
+        model.doAction(Actions.addNode({ type: "tab", name: "Tab 2", component: "test", id: "tab2" }, "tabset1", DockLocation.CENTER, -1, true));
+
+        await new Promise((resolve) => setTimeout(resolve, 200));
+
+        // Both tabs should be rendered now (OptimizedLayout keeps background tabs mounted)
+        expect(document.querySelectorAll('[role="tabpanel"]').length).toBe(2);
+
+        // Record state before drag
+        const initialRenderCount = renderCount;
+
+        // Simulate drag operation - drag the newly added tab toward the center
+        const tabButtons = document.querySelectorAll(".flexlayout__tab_button");
+        const tab2Button = Array.from(tabButtons).find((btn) => btn.textContent?.includes("Tab 2")) as HTMLElement;
+        expect(tab2Button).not.toBeNull();
+        const rect = tab2Button.getBoundingClientRect();
+
+        // Start drag
+        const dataTransfer = new DataTransfer();
+        tab2Button.dispatchEvent(
+            new DragEvent("dragstart", {
+                bubbles: true,
+                cancelable: true,
+                clientX: rect.left + rect.width / 2,
+                clientY: rect.top + rect.height / 2,
+                dataTransfer,
+            }),
+        );
+
+        // Wait for drag to initialize
+        await new Promise((resolve) => setTimeout(resolve, 50));
+
+        // Enter the layout (this triggers onDragEnter which sets up drag state)
+        const layoutElement = document.querySelector(".flexlayout__layout") as HTMLElement;
+        expect(layoutElement).not.toBeNull();
+        const layoutRect = layoutElement.getBoundingClientRect();
+
+        layoutElement.dispatchEvent(
+            new DragEvent("dragenter", {
+                bubbles: true,
+                cancelable: true,
+                clientX: rect.left + rect.width / 2,
+                clientY: rect.top + rect.height / 2,
+                dataTransfer,
+            }),
+        );
+
+        await new Promise((resolve) => setTimeout(resolve, 50));
+
+        // Simulate dragging toward the center of the viewport (10 move events)
+        const centerX = layoutRect.left + layoutRect.width / 2;
+        const centerY = layoutRect.top + layoutRect.height / 2;
+
+        for (let i = 0; i < 10; i++) {
+            // Move progressively toward the center
+            const progress = (i + 1) / 10;
+            const x = rect.left + (centerX - rect.left) * progress;
+            const y = rect.top + (centerY - rect.top) * progress;
+
+            layoutElement.dispatchEvent(
+                new DragEvent("dragover", {
+                    bubbles: true,
+                    cancelable: true,
+                    clientX: x,
+                    clientY: y,
+                    dataTransfer,
+                }),
+            );
+            await new Promise((resolve) => setTimeout(resolve, 16)); // One frame
+        }
+
+        // End drag (without dropping)
+        tab2Button.dispatchEvent(
+            new DragEvent("dragend", {
+                bubbles: true,
+                cancelable: true,
+                dataTransfer,
+            }),
+        );
+
+        await new Promise((resolve) => setTimeout(resolve, 100));
+
+        // Tab content should NOT have re-rendered during drag
+        // The memoization should prevent any re-renders when only isDragging changes
+        const rendersFromDrag = renderCount - initialRenderCount;
+        expect(rendersFromDrag).toBe(0);
+    });
+
+    it("does not unmount tab content during drag", async () => {
+        let mountCount = 0;
+        let unmountCount = 0;
+
+        function TrackedContent({ name }: { name: string }) {
+            React.useEffect(() => {
+                mountCount++;
+                return () => {
+                    unmountCount++;
+                };
+            }, []);
+            return <div>{name}</div>;
+        }
+
+        // Start with a single tab model
+        const singleTabModel: IJsonModel = {
+            global: {},
+            layout: {
+                type: "row",
+                children: [
+                    {
+                        type: "tabset",
+                        id: "tabset1",
+                        children: [{ type: "tab", name: "Tab 1", component: "test", id: "tab1" }],
+                    },
+                ],
+            },
+        };
+
+        const model = Model.fromJson(singleTabModel);
+        await render(<OptimizedLayout model={model} renderTab={(node) => <TrackedContent name={node.getName()} />} />, { container });
+
+        await new Promise((resolve) => setTimeout(resolve, 200));
+
+        // Add a second tab and select it
+        model.doAction(Actions.addNode({ type: "tab", name: "Tab 2", component: "test", id: "tab2" }, "tabset1", DockLocation.CENTER, -1, true));
+
+        await new Promise((resolve) => setTimeout(resolve, 200));
+
+        const initialUnmounts = unmountCount;
+
+        // Simulate drag operation - drag the newly added tab toward the center
+        const tabButtons = document.querySelectorAll(".flexlayout__tab_button");
+        const tab2Button = Array.from(tabButtons).find((btn) => btn.textContent?.includes("Tab 2")) as HTMLElement;
+        expect(tab2Button).not.toBeNull();
+        const rect = tab2Button.getBoundingClientRect();
+
+        const dataTransfer = new DataTransfer();
+        tab2Button.dispatchEvent(
+            new DragEvent("dragstart", {
+                bubbles: true,
+                cancelable: true,
+                clientX: rect.left + rect.width / 2,
+                clientY: rect.top + rect.height / 2,
+                dataTransfer,
+            }),
+        );
+
+        await new Promise((resolve) => setTimeout(resolve, 50));
+
+        // Enter the layout (this triggers onDragEnter which sets up drag state)
+        const layoutElement = document.querySelector(".flexlayout__layout") as HTMLElement;
+        const layoutRect = layoutElement.getBoundingClientRect();
+
+        layoutElement.dispatchEvent(
+            new DragEvent("dragenter", {
+                bubbles: true,
+                cancelable: true,
+                clientX: rect.left + rect.width / 2,
+                clientY: rect.top + rect.height / 2,
+                dataTransfer,
+            }),
+        );
+
+        await new Promise((resolve) => setTimeout(resolve, 50));
+
+        // Simulate dragging toward the center of the viewport
+        const centerX = layoutRect.left + layoutRect.width / 2;
+        const centerY = layoutRect.top + layoutRect.height / 2;
+
+        for (let i = 0; i < 10; i++) {
+            const progress = (i + 1) / 10;
+            const x = rect.left + (centerX - rect.left) * progress;
+            const y = rect.top + (centerY - rect.top) * progress;
+
+            layoutElement.dispatchEvent(
+                new DragEvent("dragover", {
+                    bubbles: true,
+                    cancelable: true,
+                    clientX: x,
+                    clientY: y,
+                    dataTransfer,
+                }),
+            );
+            await new Promise((resolve) => setTimeout(resolve, 16));
+        }
+
+        tab2Button.dispatchEvent(
+            new DragEvent("dragend", {
+                bubbles: true,
+                cancelable: true,
+                dataTransfer,
+            }),
+        );
+
+        await new Promise((resolve) => setTimeout(resolve, 100));
+
+        // Tab content should NOT have unmounted during drag
+        expect(unmountCount).toBe(initialUnmounts);
+    });
+
+    it("does not cause excessive re-renders during drag with grid layout", async () => {
+        // More complex test with a grid layout (multiple visible tabsets)
+        // Start with a single tab in each tabset
+        const gridModel: IJsonModel = {
+            global: { tabEnableClose: false },
+            layout: {
+                type: "row",
+                children: [
+                    {
+                        type: "tabset",
+                        id: "left-tabset",
+                        weight: 50,
+                        children: [{ type: "tab", id: "left-tab-1", name: "Left Tab 1", component: "test" }],
+                    },
+                    {
+                        type: "tabset",
+                        id: "right-tabset",
+                        weight: 50,
+                        children: [{ type: "tab", id: "right-tab-1", name: "Right Tab 1", component: "test" }],
+                    },
+                ],
+            },
+        };
+
+        const renderCounts = new Map<string, number>();
+
+        function TrackedContent({ name }: { name: string }) {
+            renderCounts.set(name, (renderCounts.get(name) ?? 0) + 1);
+            return <div>{name}</div>;
+        }
+
+        const model = Model.fromJson(gridModel);
+        await render(<OptimizedLayout model={model} renderTab={(node) => <TrackedContent name={node.getName()} />} />, { container });
+
+        await new Promise((resolve) => setTimeout(resolve, 200));
+
+        // Add second tabs to each tabset
+        model.doAction(Actions.addNode({ type: "tab", name: "Left Tab 2", component: "test", id: "left-tab-2" }, "left-tabset", DockLocation.CENTER, -1, true));
+        model.doAction(Actions.addNode({ type: "tab", name: "Right Tab 2", component: "test", id: "right-tab-2" }, "right-tabset", DockLocation.CENTER, -1, true));
+
+        await new Promise((resolve) => setTimeout(resolve, 200));
+
+        // Record initial render counts
+        const initialCounts = new Map(renderCounts);
+
+        // Simulate drag operation - drag one tab
+        const tabButtons = document.querySelectorAll(".flexlayout__tab_button");
+        const leftTab2Button = Array.from(tabButtons).find((btn) => btn.textContent?.includes("Left Tab 2")) as HTMLElement;
+        expect(leftTab2Button).not.toBeNull();
+        const rect = leftTab2Button.getBoundingClientRect();
+
+        const dataTransfer = new DataTransfer();
+        leftTab2Button.dispatchEvent(
+            new DragEvent("dragstart", {
+                bubbles: true,
+                cancelable: true,
+                clientX: rect.left + rect.width / 2,
+                clientY: rect.top + rect.height / 2,
+                dataTransfer,
+            }),
+        );
+
+        await new Promise((resolve) => setTimeout(resolve, 50));
+
+        // Enter the layout
+        const layoutElement = document.querySelector(".flexlayout__layout") as HTMLElement;
+        const layoutRect = layoutElement.getBoundingClientRect();
+
+        layoutElement.dispatchEvent(
+            new DragEvent("dragenter", {
+                bubbles: true,
+                cancelable: true,
+                clientX: rect.left + rect.width / 2,
+                clientY: rect.top + rect.height / 2,
+                dataTransfer,
+            }),
+        );
+
+        await new Promise((resolve) => setTimeout(resolve, 50));
+
+        // Simulate dragging toward the center
+        const centerX = layoutRect.left + layoutRect.width / 2;
+        const centerY = layoutRect.top + layoutRect.height / 2;
+
+        for (let i = 0; i < 10; i++) {
+            const progress = (i + 1) / 10;
+            const x = rect.left + (centerX - rect.left) * progress;
+            const y = rect.top + (centerY - rect.top) * progress;
+
+            layoutElement.dispatchEvent(
+                new DragEvent("dragover", {
+                    bubbles: true,
+                    cancelable: true,
+                    clientX: x,
+                    clientY: y,
+                    dataTransfer,
+                }),
+            );
+            await new Promise((resolve) => setTimeout(resolve, 16));
+        }
+
+        leftTab2Button.dispatchEvent(
+            new DragEvent("dragend", {
+                bubbles: true,
+                cancelable: true,
+                dataTransfer,
+            }),
+        );
+
+        await new Promise((resolve) => setTimeout(resolve, 100));
+
+        // Check each tab's render count - none should have any additional re-renders during drag
+        for (const [name, count] of renderCounts) {
+            const initialCount = initialCounts.get(name) ?? 0;
+            const additionalRenders = count - initialCount;
+            expect(additionalRenders).toBe(0);
+        }
+    });
 });

@@ -1,5 +1,5 @@
 import * as React from "react";
-import { useCallback, useEffect, useState } from "react";
+import { memo, useCallback, useEffect, useMemo, useState } from "react";
 import { Rect } from "../Rect";
 import { Action } from "../model/Action";
 import { Actions } from "../model/Actions";
@@ -108,6 +108,62 @@ function TabRef({
 }
 
 /**
+ * TabPanel - Memoized wrapper for individual tab content.
+ * This prevents tab content from re-rendering when TabContainer re-renders
+ * due to drag state changes or other props that don't affect the tab content.
+ */
+const TabPanel = memo(function TabPanel({
+    nodeId,
+    node,
+    rect,
+    visible,
+    isDragging,
+    contentClassName,
+    className,
+    renderTab,
+    onPointerDown,
+}: {
+    nodeId: string;
+    node: TabNode;
+    rect: Rect;
+    visible: boolean;
+    isDragging: boolean;
+    contentClassName: string | undefined;
+    className: string;
+    renderTab: (node: TabNode) => React.ReactNode;
+    onPointerDown: () => void;
+}) {
+    // Use percentage-based sizing as fallback when dimensions are 0 (initial state).
+    // This ensures tab content is clickable before resize events fire.
+    const hasValidDimensions = rect.width > 0 && rect.height > 0;
+
+    // Memoize the rendered content to prevent re-renders when only positioning changes
+    const content = useMemo(() => renderTab(node), [renderTab, node]);
+
+    return (
+        <div
+            role="tabpanel"
+            data-tab-id={nodeId}
+            className={className + (contentClassName ? " " + contentClassName : "")}
+            style={{
+                position: "absolute",
+                display: visible ? "flex" : "none",
+                left: hasValidDimensions ? rect.x : 0,
+                top: hasValidDimensions ? rect.y : 0,
+                width: hasValidDimensions ? rect.width : "100%",
+                height: hasValidDimensions ? rect.height : "100%",
+                overflow: "auto",
+                // Tab panels receive pointer events when visible and not dragging
+                pointerEvents: visible && !isDragging ? "auto" : "none",
+            }}
+            onPointerDown={onPointerDown}
+        >
+            {content}
+        </div>
+    );
+});
+
+/**
  * TabContainer - Renders all tab content with absolute positioning.
  * This is a sibling to the Layout component, not inside FlexLayout's DOM.
  */
@@ -124,12 +180,7 @@ function TabContainer({
     classNameMapper?: (defaultClassName: string) => string;
     model: Model;
 }) {
-    const getClassName = useCallback(
-        (defaultClassName: string) => {
-            return classNameMapper ? classNameMapper(defaultClassName) : defaultClassName;
-        },
-        [classNameMapper],
-    );
+    const className = classNameMapper ? classNameMapper("flexlayout__tab") : "flexlayout__tab";
 
     // Handle pointer down on tab content to activate the parent tabset
     const handlePointerDown = useCallback(
@@ -161,36 +212,20 @@ function TabContainer({
             }}
             data-layout-path="/tab-container"
         >
-            {Array.from(tabs.entries()).map(([nodeId, tabInfo]) => {
-                const { node, rect, visible } = tabInfo;
-                const contentClassName = node.getContentClassName();
-                // Use percentage-based sizing as fallback when dimensions are 0 (initial state).
-                // This ensures tab content is clickable before resize events fire.
-                const hasValidDimensions = rect.width > 0 && rect.height > 0;
-
-                return (
-                    <div
-                        key={nodeId}
-                        role="tabpanel"
-                        data-tab-id={nodeId}
-                        className={getClassName("flexlayout__tab") + (contentClassName ? " " + contentClassName : "")}
-                        style={{
-                            position: "absolute",
-                            display: visible ? "flex" : "none",
-                            left: hasValidDimensions ? rect.x : 0,
-                            top: hasValidDimensions ? rect.y : 0,
-                            width: hasValidDimensions ? rect.width : "100%",
-                            height: hasValidDimensions ? rect.height : "100%",
-                            overflow: "auto",
-                            // Tab panels receive pointer events when visible and not dragging
-                            pointerEvents: visible && !isDragging ? "auto" : "none",
-                        }}
-                        onPointerDown={() => handlePointerDown(node)}
-                    >
-                        {renderTab(node)}
-                    </div>
-                );
-            })}
+            {Array.from(tabs.entries()).map(([nodeId, tabInfo]) => (
+                <TabPanel
+                    key={nodeId}
+                    nodeId={nodeId}
+                    node={tabInfo.node}
+                    rect={tabInfo.rect}
+                    visible={tabInfo.visible}
+                    isDragging={isDragging}
+                    contentClassName={tabInfo.node.getContentClassName()}
+                    className={className}
+                    renderTab={renderTab}
+                    onPointerDown={() => handlePointerDown(tabInfo.node)}
+                />
+            ))}
         </div>
     );
 }
