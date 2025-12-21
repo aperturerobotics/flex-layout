@@ -321,10 +321,18 @@ export function OptimizedLayout({ model, renderTab, classNameMapper, onDragState
         [handleTabMount, handleRectChange, handleVisibilityChange],
     );
 
+    // Wrap Layout and TabContainer in a relative container so TabContainer's
+    // absolute positioning aligns with Layout's coordinate system.
+    // Uses flex: 1 for flex containers. The flex container must have:
+    // - position: relative (for absolute children)
+    // - display: flex with flex-direction: column (to pass flex sizing to children)
+    // - overflow: hidden (to establish containing block for absolute children)
+    // The inner Layout uses position: absolute with inset: 0.
+    // The "flexlayout__optimized_layout" class allows CSS to target this wrapper.
     return (
-        <>
+        <div className="flexlayout__optimized_layout" style={{ position: "relative", flex: "1 1 0", display: "flex", flexDirection: "column", minHeight: 0, minWidth: 0, overflow: "hidden" }}>
             <Layout model={model} factory={factory} classNameMapper={classNameMapper} onDragStateChange={handleDragStateChange} onModelChange={handleModelChange} {...layoutProps} />
             <TabContainer tabs={tabs} renderTab={renderTab} isDragging={isDragging} classNameMapper={classNameMapper} model={model} />
-        </>
+        </div>
     );
 }
