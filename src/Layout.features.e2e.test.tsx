@@ -485,4 +485,139 @@ describe("Layout Features", () => {
             expect(remainingButtons.length).toBe(initialCount);
         });
     });
+
+    describe("Grid Mode Layout", () => {
+        it("renders side-by-side tabsets correctly", async () => {
+            const model = Model.fromJson(multiTabsetModel);
+
+            await render(<Layout model={model} factory={(node) => <div data-testid={`content-${node.getId()}`}>Content {node.getName()}</div>} />, { container });
+
+            await new Promise((resolve) => setTimeout(resolve, 100));
+
+            const tabsets = document.querySelectorAll(".flexlayout__tabset");
+            expect(tabsets.length).toBe(2);
+
+            const leftTabset = tabsets[0] as HTMLElement;
+            const rightTabset = tabsets[1] as HTMLElement;
+            const leftRect = leftTabset.getBoundingClientRect();
+            const rightRect = rightTabset.getBoundingClientRect();
+
+            // Tabsets should be side by side (not overlapping)
+            expect(leftRect.right).toBeLessThanOrEqual(rightRect.left + 10);
+
+            // Both should have similar heights
+            expect(Math.abs(leftRect.height - rightRect.height)).toBeLessThan(2);
+        });
+
+        it("grid mode tabsets have equal spacing from edges", async () => {
+            const model = Model.fromJson(multiTabsetModel);
+
+            await render(<Layout model={model} factory={(node) => <div>Content {node.getName()}</div>} />, { container });
+
+            await new Promise((resolve) => setTimeout(resolve, 100));
+
+            const layoutElement = document.querySelector(".flexlayout__layout") as HTMLElement;
+            const tabsets = document.querySelectorAll(".flexlayout__tabset");
+            const leftTabset = tabsets[0] as HTMLElement;
+            const rightTabset = tabsets[1] as HTMLElement;
+
+            const layoutRect = layoutElement.getBoundingClientRect();
+            const leftRect = leftTabset.getBoundingClientRect();
+            const rightRect = rightTabset.getBoundingClientRect();
+
+            // Calculate spacing from layout edge to tabsets
+            const leftPadding = leftRect.left - layoutRect.left;
+            const rightPadding = layoutRect.right - rightRect.right;
+
+            console.log("=== GRID LAYOUT SPACING ===", {
+                leftPadding,
+                rightPadding,
+                diff: Math.abs(leftPadding - rightPadding),
+            });
+
+            // Spacing should be equal (within tolerance)
+            expect(Math.abs(leftPadding - rightPadding)).toBeLessThanOrEqual(2);
+        });
+
+        it("grid mode tab bars do not extend above layout", async () => {
+            const model = Model.fromJson(multiTabsetModel);
+
+            await render(<Layout model={model} factory={(node) => <div>Content {node.getName()}</div>} />, { container });
+
+            await new Promise((resolve) => setTimeout(resolve, 100));
+
+            const layoutElement = document.querySelector(".flexlayout__layout") as HTMLElement;
+            const tabBars = document.querySelectorAll(".flexlayout__tabset_tabbar_outer_top");
+
+            const layoutRect = layoutElement.getBoundingClientRect();
+
+            tabBars.forEach((tabBar, index) => {
+                const tabBarRect = tabBar.getBoundingClientRect();
+
+                console.log(`=== TAB BAR ${index} ===`, {
+                    tabBarTop: tabBarRect.top,
+                    layoutTop: layoutRect.top,
+                    overlap: layoutRect.top - tabBarRect.top,
+                });
+
+                // Tab bar should not extend above layout
+                expect(tabBarRect.top).toBeGreaterThanOrEqual(layoutRect.top - 1);
+            });
+        });
+
+        it("grid mode tabsets fill available height", async () => {
+            const model = Model.fromJson(multiTabsetModel);
+
+            await render(<Layout model={model} factory={(node) => <div>Content {node.getName()}</div>} />, { container });
+
+            await new Promise((resolve) => setTimeout(resolve, 100));
+
+            const layoutElement = document.querySelector(".flexlayout__layout") as HTMLElement;
+            const tabsets = document.querySelectorAll(".flexlayout__tabset");
+
+            const layoutRect = layoutElement.getBoundingClientRect();
+            const leftRect = (tabsets[0] as HTMLElement).getBoundingClientRect();
+            const rightRect = (tabsets[1] as HTMLElement).getBoundingClientRect();
+
+            console.log("=== HEIGHT CHECK ===", {
+                layoutHeight: layoutRect.height,
+                leftHeight: leftRect.height,
+                rightHeight: rightRect.height,
+            });
+
+            // Both tabsets should have the same height
+            expect(Math.abs(leftRect.height - rightRect.height)).toBeLessThan(2);
+
+            // Tabsets should fill most of layout height
+            const heightRatio = leftRect.height / layoutRect.height;
+            expect(heightRatio).toBeGreaterThan(0.9);
+        });
+
+        it("splitter is positioned between grid tabsets", async () => {
+            const model = Model.fromJson(multiTabsetModel);
+
+            await render(<Layout model={model} factory={(node) => <div>Content {node.getName()}</div>} />, { container });
+
+            await new Promise((resolve) => setTimeout(resolve, 100));
+
+            const splitter = document.querySelector(".flexlayout__splitter") as HTMLElement;
+            expect(splitter).not.toBeNull();
+
+            const tabsets = document.querySelectorAll(".flexlayout__tabset");
+            const leftRect = (tabsets[0] as HTMLElement).getBoundingClientRect();
+            const rightRect = (tabsets[1] as HTMLElement).getBoundingClientRect();
+            const splitterRect = splitter.getBoundingClientRect();
+
+            console.log("=== SPLITTER POSITION ===", {
+                leftRight: leftRect.right,
+                splitterLeft: splitterRect.left,
+                splitterRight: splitterRect.right,
+                rightLeft: rightRect.left,
+            });
+
+            // Splitter should be between the two tabsets
+            expect(splitterRect.left).toBeGreaterThanOrEqual(leftRect.right - 1);
+            expect(splitterRect.right).toBeLessThanOrEqual(rightRect.left + 1);
+        });
+    });
 });
