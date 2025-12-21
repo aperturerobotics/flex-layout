@@ -2,6 +2,7 @@ import * as React from "react";
 import { useCallback, useEffect, useState } from "react";
 import { Rect } from "../Rect";
 import { Action } from "../model/Action";
+import { Actions } from "../model/Actions";
 import { BorderNode } from "../model/BorderNode";
 import { Model } from "../model/Model";
 import { ResizeEventParams, VisibilityEventParams } from "../model/Node";
@@ -103,17 +104,33 @@ function TabContainer({
     renderTab,
     isDragging,
     classNameMapper,
+    model,
 }: {
     tabs: Map<string, TabInfo>;
     renderTab: (node: TabNode) => React.ReactNode;
     isDragging: boolean;
     classNameMapper?: (defaultClassName: string) => string;
+    model: Model;
 }) {
     const getClassName = useCallback(
         (defaultClassName: string) => {
             return classNameMapper ? classNameMapper(defaultClassName) : defaultClassName;
         },
         [classNameMapper],
+    );
+
+    // Handle pointer down on tab content to activate the parent tabset
+    const handlePointerDown = useCallback(
+        (node: TabNode) => {
+            const parent = node.getParent();
+            if (parent instanceof TabSetNode) {
+                if (!parent.isActive()) {
+                    // Use the model's doAction to set the active tabset
+                    model.doAction(Actions.setActiveTabset(parent.getId(), Model.MAIN_WINDOW_ID));
+                }
+            }
+        },
+        [model],
     );
 
     return (
@@ -156,6 +173,7 @@ function TabContainer({
                             // Tab panels receive pointer events when visible and not dragging
                             pointerEvents: visible && !isDragging ? "auto" : "none",
                         }}
+                        onPointerDown={() => handlePointerDown(node)}
                     >
                         {renderTab(node)}
                     </div>
@@ -306,7 +324,7 @@ export function OptimizedLayout({ model, renderTab, classNameMapper, onDragState
     return (
         <>
             <Layout model={model} factory={factory} classNameMapper={classNameMapper} onDragStateChange={handleDragStateChange} onModelChange={handleModelChange} {...layoutProps} />
-            <TabContainer tabs={tabs} renderTab={renderTab} isDragging={isDragging} classNameMapper={classNameMapper} />
+            <TabContainer tabs={tabs} renderTab={renderTab} isDragging={isDragging} classNameMapper={classNameMapper} model={model} />
         </>
     );
 }

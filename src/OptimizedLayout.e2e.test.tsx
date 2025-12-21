@@ -619,4 +619,167 @@ describe("OptimizedLayout", () => {
         });
         expect(tabExists).toBe(false);
     });
+
+    // Tests for click-to-select behavior in grid mode (multiple tabsets)
+    // This verifies the fix for: clicking on tab content in OptimizedLayout activates the parent tabset.
+    // Since OptimizedLayout renders tab content in a sibling TabContainer element (not inside FlexLayout's DOM),
+    // click events need special handling via onPointerDown on the tab panel.
+
+    it("clicking on tab content in grid mode activates the parent tabset", async () => {
+        // Create a grid layout with 2 side-by-side tabsets
+        const gridModel: IJsonModel = {
+            global: {
+                splitterSize: 4,
+                tabEnableClose: false,
+            },
+            layout: {
+                type: "row",
+                weight: 100,
+                children: [
+                    {
+                        type: "tabset",
+                        id: "left-tabset",
+                        weight: 50,
+                        selected: 0,
+                        children: [{ type: "tab", id: "left-tab", name: "Left Tab", component: "test" }],
+                    },
+                    {
+                        type: "tabset",
+                        id: "right-tabset",
+                        weight: 50,
+                        selected: 0,
+                        children: [{ type: "tab", id: "right-tab", name: "Right Tab", component: "test" }],
+                    },
+                ],
+            },
+        };
+
+        const model = Model.fromJson(gridModel);
+
+        // Set left tabset as initially active
+        model.doAction(Actions.setActiveTabset("left-tabset"));
+
+        await render(
+            <OptimizedLayout
+                model={model}
+                renderTab={(node) => (
+                    <div data-testid={`content-${node.getId()}`} style={{ width: "100%", height: "100%", padding: "20px" }}>
+                        Content for {node.getName()}
+                    </div>
+                )}
+            />,
+            { container },
+        );
+
+        // Wait for layout to render
+        await new Promise((resolve) => setTimeout(resolve, 200));
+
+        // Verify both tabsets exist
+        const tabsets = document.querySelectorAll(".flexlayout__tabset");
+        expect(tabsets.length).toBe(2);
+
+        // Verify tab panels exist in TabContainer
+        const tabPanels = document.querySelectorAll('[role="tabpanel"]');
+        expect(tabPanels.length).toBe(2);
+
+        // Helper to check which tabset is active
+        const getActiveTabsetId = (): string | undefined => {
+            let activeId: string | undefined;
+            model.visitNodes((node) => {
+                if (node.getType() === "tabset") {
+                    const tabset = node as TabSetNode;
+                    if (tabset.isActive()) {
+                        activeId = tabset.getId();
+                    }
+                }
+            });
+            return activeId;
+        };
+
+        // Initially, left tabset should be active
+        expect(getActiveTabsetId()).toBe("left-tabset");
+
+        // Find the right tab panel (rendered in TabContainer)
+        const rightTabPanel = document.querySelector('[data-tab-id="right-tab"]') as HTMLElement;
+        expect(rightTabPanel).not.toBeNull();
+
+        // Simulate pointerdown on the right tab panel
+        // This is what OptimizedLayout's TabContainer listens for
+        rightTabPanel.dispatchEvent(
+            new PointerEvent("pointerdown", {
+                bubbles: true,
+                cancelable: true,
+            }),
+        );
+
+        await new Promise((resolve) => setTimeout(resolve, 100));
+
+        // After clicking on right tab content, right tabset should be active
+        expect(getActiveTabsetId()).toBe("right-tabset");
+
+        // Now click on left tab content
+        const leftTabPanel = document.querySelector('[data-tab-id="left-tab"]') as HTMLElement;
+        expect(leftTabPanel).not.toBeNull();
+
+        leftTabPanel.dispatchEvent(
+            new PointerEvent("pointerdown", {
+                bubbles: true,
+                cancelable: true,
+            }),
+        );
+
+        await new Promise((resolve) => setTimeout(resolve, 100));
+
+        // Left tabset should now be active again
+        expect(getActiveTabsetId()).toBe("left-tabset");
+    });
+
+    it("clicking on already active tabset content does not trigger unnecessary action", async () => {
+        const gridModel: IJsonModel = {
+            global: { tabEnableClose: false },
+            layout: {
+                type: "row",
+                children: [
+                    {
+                        type: "tabset",
+                        id: "left-tabset",
+                        weight: 50,
+                        children: [{ type: "tab", id: "left-tab", name: "Left Tab", component: "test" }],
+                    },
+                    {
+                        type: "tabset",
+                        id: "right-tabset",
+                        weight: 50,
+                        children: [{ type: "tab", id: "right-tab", name: "Right Tab", component: "test" }],
+                    },
+                ],
+            },
+        };
+
+        const model = Model.fromJson(gridModel);
+        model.doAction(Actions.setActiveTabset("left-tabset"));
+
+        let actionCount = 0;
+        const originalDoAction = model.doAction.bind(model);
+        model.doAction = (action) => {
+            actionCount++;
+            return originalDoAction(action);
+        };
+
+        await render(<OptimizedLayout model={model} renderTab={(node) => <div data-testid={`content-${node.getId()}`}>Content for {node.getName()}</div>} />, { container });
+
+        await new Promise((resolve) => setTimeout(resolve, 200));
+
+        // Reset counter after initial render
+        actionCount = 0;
+
+        // Click on left tab (already active tabset)
+        const leftTabPanel = document.querySelector('[data-tab-id="left-tab"]') as HTMLElement;
+        leftTabPanel.dispatchEvent(new PointerEvent("pointerdown", { bubbles: true, cancelable: true }));
+
+        await new Promise((resolve) => setTimeout(resolve, 100));
+
+        // No action should have been dispatched since tabset was already active
+        expect(actionCount).toBe(0);
+    });
 });

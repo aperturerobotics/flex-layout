@@ -235,4 +235,317 @@ describe("Layout E2E", () => {
             }),
         );
     });
+
+    // Tests for drag overlay visibility fix (dragleave handling)
+    // This verifies the fix for: drag overlay disappearing when dragging into nested content.
+    // The issue was that dragleave events would hide the overlay even when the cursor was
+    // still inside the layout (just moving between child elements).
+
+    it("drag overlay remains visible when dragging into content area", async () => {
+        const model = Model.fromJson(jsonModel);
+
+        await render(
+            <Layout
+                model={model}
+                factory={(node) => (
+                    <div data-testid={`content-${node.getId()}`} style={{ width: "100%", height: "100%" }}>
+                        Content for {node.getName()}
+                    </div>
+                )}
+            />,
+            { container },
+        );
+
+        await new Promise((resolve) => setTimeout(resolve, 100));
+
+        const tabButton = document.querySelectorAll(".flexlayout__tab_button")[1] as HTMLElement; // Use second tab
+        const layoutElement = document.querySelector(".flexlayout__layout") as HTMLElement;
+        const tabContent = document.querySelector(".flexlayout__tab") as HTMLElement;
+
+        expect(tabButton).not.toBeNull();
+        expect(layoutElement).not.toBeNull();
+        expect(tabContent).not.toBeNull();
+
+        const rect = tabButton.getBoundingClientRect();
+        const startX = rect.left + rect.width / 2;
+        const startY = rect.top + rect.height / 2;
+
+        const dataTransfer = new DataTransfer();
+
+        // Start drag on second tab
+        tabButton.dispatchEvent(
+            new DragEvent("dragstart", {
+                bubbles: true,
+                cancelable: true,
+                clientX: startX,
+                clientY: startY,
+                dataTransfer,
+            }),
+        );
+
+        // Enter layout
+        layoutElement.dispatchEvent(
+            new DragEvent("dragenter", {
+                bubbles: true,
+                cancelable: true,
+                clientX: startX,
+                clientY: startY,
+                dataTransfer,
+            }),
+        );
+
+        await new Promise((resolve) => setTimeout(resolve, 50));
+
+        // Drag over tab bar to show overlay
+        layoutElement.dispatchEvent(
+            new DragEvent("dragover", {
+                bubbles: true,
+                cancelable: true,
+                clientX: startX,
+                clientY: startY + 10,
+                dataTransfer,
+            }),
+        );
+
+        await new Promise((resolve) => setTimeout(resolve, 100));
+
+        // Verify overlay is visible
+        const outlineRect = document.querySelector(".flexlayout__outline_rect") as HTMLElement;
+        expect(outlineRect).not.toBeNull();
+        expect(outlineRect.style.visibility).toBe("visible");
+
+        // Now drag down into content area (100px below tab)
+        const contentY = startY + 100;
+
+        layoutElement.dispatchEvent(
+            new DragEvent("dragover", {
+                bubbles: true,
+                cancelable: true,
+                clientX: startX,
+                clientY: contentY,
+                dataTransfer,
+            }),
+        );
+
+        await new Promise((resolve) => setTimeout(resolve, 100));
+
+        // Overlay should still be visible after dragging into content area
+        const outlineAfterMove = document.querySelector(".flexlayout__outline_rect") as HTMLElement;
+        expect(outlineAfterMove).not.toBeNull();
+        expect(outlineAfterMove.style.visibility).toBe("visible");
+
+        // End drag
+        tabButton.dispatchEvent(
+            new DragEvent("dragend", {
+                bubbles: true,
+                cancelable: true,
+                clientX: startX,
+                clientY: contentY,
+                dataTransfer,
+            }),
+        );
+    });
+
+    it("drag overlay remains visible when dragleave fires with relatedTarget inside layout", async () => {
+        const model = Model.fromJson(jsonModel);
+
+        await render(
+            <Layout
+                model={model}
+                factory={(node) => (
+                    <div data-testid={`content-${node.getId()}`} style={{ width: "100%", height: "100%" }}>
+                        Content for {node.getName()}
+                    </div>
+                )}
+            />,
+            { container },
+        );
+
+        await new Promise((resolve) => setTimeout(resolve, 100));
+
+        const tabButton = document.querySelectorAll(".flexlayout__tab_button")[1] as HTMLElement;
+        const layoutElement = document.querySelector(".flexlayout__layout") as HTMLElement;
+        const tabContent = document.querySelector(".flexlayout__tab") as HTMLElement;
+
+        const rect = tabButton.getBoundingClientRect();
+        const startX = rect.left + rect.width / 2;
+        const startY = rect.top + rect.height / 2;
+
+        const dataTransfer = new DataTransfer();
+
+        // Start drag
+        tabButton.dispatchEvent(
+            new DragEvent("dragstart", {
+                bubbles: true,
+                cancelable: true,
+                clientX: startX,
+                clientY: startY,
+                dataTransfer,
+            }),
+        );
+
+        // Enter layout
+        layoutElement.dispatchEvent(
+            new DragEvent("dragenter", {
+                bubbles: true,
+                cancelable: true,
+                clientX: startX,
+                clientY: startY,
+                dataTransfer,
+            }),
+        );
+
+        await new Promise((resolve) => setTimeout(resolve, 50));
+
+        // Drag over to show overlay
+        layoutElement.dispatchEvent(
+            new DragEvent("dragover", {
+                bubbles: true,
+                cancelable: true,
+                clientX: startX,
+                clientY: startY + 10,
+                dataTransfer,
+            }),
+        );
+
+        await new Promise((resolve) => setTimeout(resolve, 100));
+
+        // Verify overlay is visible
+        let outlineRect = document.querySelector(".flexlayout__outline_rect") as HTMLElement;
+        expect(outlineRect).not.toBeNull();
+        expect(outlineRect.style.visibility).toBe("visible");
+
+        // Simulate dragleave with relatedTarget being a child element (still inside layout)
+        // This is what happens when cursor moves from one element to another within the layout
+        layoutElement.dispatchEvent(
+            new DragEvent("dragleave", {
+                bubbles: true,
+                cancelable: true,
+                clientX: startX,
+                clientY: startY + 100,
+                dataTransfer,
+                relatedTarget: tabContent, // Target is inside the layout
+            }),
+        );
+
+        await new Promise((resolve) => setTimeout(resolve, 100));
+
+        // Overlay should still be visible because relatedTarget is inside the layout
+        outlineRect = document.querySelector(".flexlayout__outline_rect") as HTMLElement;
+        expect(outlineRect).not.toBeNull();
+        expect(outlineRect.style.visibility).toBe("visible");
+
+        // End drag
+        tabButton.dispatchEvent(
+            new DragEvent("dragend", {
+                bubbles: true,
+                cancelable: true,
+                clientX: startX,
+                clientY: startY + 100,
+                dataTransfer,
+            }),
+        );
+    });
+
+    it("drag overlay hides when dragleave fires with relatedTarget outside layout", async () => {
+        const model = Model.fromJson(jsonModel);
+
+        await render(
+            <Layout
+                model={model}
+                factory={(node) => (
+                    <div data-testid={`content-${node.getId()}`} style={{ width: "100%", height: "100%" }}>
+                        Content for {node.getName()}
+                    </div>
+                )}
+            />,
+            { container },
+        );
+
+        await new Promise((resolve) => setTimeout(resolve, 100));
+
+        const tabButton = document.querySelectorAll(".flexlayout__tab_button")[1] as HTMLElement;
+        const layoutElement = document.querySelector(".flexlayout__layout") as HTMLElement;
+
+        const rect = tabButton.getBoundingClientRect();
+        const startX = rect.left + rect.width / 2;
+        const startY = rect.top + rect.height / 2;
+
+        const dataTransfer = new DataTransfer();
+
+        // Start drag
+        tabButton.dispatchEvent(
+            new DragEvent("dragstart", {
+                bubbles: true,
+                cancelable: true,
+                clientX: startX,
+                clientY: startY,
+                dataTransfer,
+            }),
+        );
+
+        // Enter layout
+        layoutElement.dispatchEvent(
+            new DragEvent("dragenter", {
+                bubbles: true,
+                cancelable: true,
+                clientX: startX,
+                clientY: startY,
+                dataTransfer,
+            }),
+        );
+
+        await new Promise((resolve) => setTimeout(resolve, 50));
+
+        // Drag over to show overlay
+        layoutElement.dispatchEvent(
+            new DragEvent("dragover", {
+                bubbles: true,
+                cancelable: true,
+                clientX: startX,
+                clientY: startY + 10,
+                dataTransfer,
+            }),
+        );
+
+        await new Promise((resolve) => setTimeout(resolve, 100));
+
+        // Verify overlay is visible
+        let outlineRect = document.querySelector(".flexlayout__outline_rect") as HTMLElement;
+        expect(outlineRect).not.toBeNull();
+        expect(outlineRect.style.visibility).toBe("visible");
+
+        // Simulate dragleave with relatedTarget outside the layout (e.g., body or null)
+        // This simulates cursor actually leaving the layout area
+        layoutElement.dispatchEvent(
+            new DragEvent("dragleave", {
+                bubbles: true,
+                cancelable: true,
+                clientX: startX,
+                clientY: startY - 100, // Above the layout
+                dataTransfer,
+                relatedTarget: document.body, // Target is outside the layout
+            }),
+        );
+
+        await new Promise((resolve) => setTimeout(resolve, 100));
+
+        // Overlay should be hidden because cursor left the layout
+        outlineRect = document.querySelector(".flexlayout__outline_rect") as HTMLElement;
+        // Either the rect is removed or visibility is hidden
+        if (outlineRect) {
+            expect(outlineRect.style.visibility).toBe("hidden");
+        }
+
+        // End drag
+        tabButton.dispatchEvent(
+            new DragEvent("dragend", {
+                bubbles: true,
+                cancelable: true,
+                clientX: startX,
+                clientY: startY - 100,
+                dataTransfer,
+            }),
+        );
+    });
 });
