@@ -1091,14 +1091,24 @@ export class LayoutInternal extends React.Component<ILayoutInternalProps, ILayou
     onDragLeaveRaw = (event: React.DragEvent<HTMLElement>) => {
         this.dragEnterCount--;
         if (this.dragEnterCount === 0) {
-            // Check if we're leaving to an element still inside this layout.
-            // This handles nested FlexLayout instances where dragleave fires
-            // when entering the nested layout's area.
+            // Check if we're leaving to an element still inside this layout or its
+            // sibling TabContainer (used by OptimizedLayout).
+            // This handles nested FlexLayout instances and OptimizedLayout's architecture
+            // where tab content is rendered as a sibling to the layout.
             const relatedTarget = event.relatedTarget as Element | null;
-            if (relatedTarget && this.selfRef.current?.contains(relatedTarget)) {
-                // Still inside this layout, don't clear drag state
-                this.dragEnterCount = 1;
-                return;
+            if (relatedTarget) {
+                // Check if inside this layout
+                if (this.selfRef.current?.contains(relatedTarget)) {
+                    this.dragEnterCount = 1;
+                    return;
+                }
+                // Check if inside sibling TabContainer (OptimizedLayout architecture)
+                // TabContainer is a sibling with data-layout-path="/tab-container"
+                const tabContainer = relatedTarget.closest('[data-layout-path="/tab-container"]');
+                if (tabContainer && this.selfRef.current?.parentElement?.contains(tabContainer)) {
+                    this.dragEnterCount = 1;
+                    return;
+                }
             }
             this.onDragLeave(event);
         }
