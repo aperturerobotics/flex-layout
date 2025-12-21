@@ -2,7 +2,7 @@
 
 [![GitHub](https://img.shields.io/github/license/Caplin/FlexLayout)](https://github.com/caplin/FlexLayout/blob/master/LICENSE)
 
-FlexLayout is a layout manager that arranges React components in multiple tab sets, tabs can be resized and moved.
+FlexLayout is a layout manager supporting multiple TabSets with draggable+resizable tabs.
 
 ![FlexLayout Demo Screenshot](Screenshot_light.png?raw=true "FlexLayout Demo Screenshot")
 
