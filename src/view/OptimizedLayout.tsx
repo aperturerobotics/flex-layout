@@ -44,14 +44,20 @@ function createTabInfo(node: TabNode): TabInfo {
  * TabRef - A placeholder component rendered inside FlexLayout.
  * It listens to TabNode events (resize, visibility) and updates the parent OptimizedLayout
  * so that the actual tab content in TabContainer can be positioned correctly.
+ *
+ * Unlike the standard Tab component, TabRef must explicitly call node.setVisible()
+ * to trigger visibility events, since the Tab component (which normally does this)
+ * is not rendered in OptimizedLayout.
  */
 function TabRef({
     node,
+    selected,
     onTabMount,
     onRectChange,
     onVisibilityChange,
 }: {
     node: TabNode;
+    selected: boolean;
     onTabMount: (node: TabNode) => void;
     onRectChange: (nodeId: string, rect: Rect) => void;
     onVisibilityChange: (nodeId: string, visible: boolean) => void;
@@ -82,14 +88,20 @@ function TabRef({
             }
         }
 
-        // Set initial visibility based on selection
-        onVisibilityChange(node.getId(), node.isSelected());
-
         return () => {
             node.removeEventListener("resize");
             node.removeEventListener("visibility");
+            // Clear visibility on unmount (like Tab.tsx does)
+            node.setVisible(false);
         };
     }, [node, onTabMount, onRectChange, onVisibilityChange]);
+
+    // Update visibility when selection changes.
+    // This mirrors what Tab.tsx does in its useLayoutEffect.
+    // Must be in a separate effect so it runs on every selection change.
+    useEffect(() => {
+        node.setVisible(selected);
+    }, [node, selected]);
 
     // TabRef renders nothing - it's just a bridge to the real tab content
     return null;
@@ -306,8 +318,29 @@ export function OptimizedLayout({ model, renderTab, classNameMapper, onDragState
     // Handle model changes (called when model.doAction() modifies the model)
     const handleModelChange = useCallback(
         (changedModel: Model, action: Action) => {
-            // Sync tabs with the updated model
-            setTabs((prevTabs) => syncTabsWithModel(prevTabs));
+            // Sync tabs with the updated model and update visibility based on selection state.
+            // This is critical because TabRef components may not be rendered yet (when contentRect.height is 0),
+            // so we can't rely solely on TabRef's visibility events. We must update visibility here
+            // based on each tab's isSelected() state.
+            setTabs((prevTabs) => {
+                const synced = syncTabsWithModel(prevTabs);
+
+                // Update visibility for all tabs based on current selection state
+                let hasVisibilityChange = false;
+                const updated = new Map<string, TabInfo>();
+
+                for (const [nodeId, tabInfo] of synced) {
+                    const shouldBeVisible = tabInfo.node.isSelected();
+                    if (tabInfo.visible !== shouldBeVisible) {
+                        hasVisibilityChange = true;
+                        updated.set(nodeId, { ...tabInfo, visible: shouldBeVisible });
+                    } else {
+                        updated.set(nodeId, tabInfo);
+                    }
+                }
+
+                return hasVisibilityChange ? updated : synced;
+            });
             userOnModelChange?.(changedModel, action);
         },
         [syncTabsWithModel, userOnModelChange],
@@ -316,21 +349,18 @@ export function OptimizedLayout({ model, renderTab, classNameMapper, onDragState
     // Factory function that returns TabRef placeholders
     const factory = useCallback(
         (node: TabNode) => {
-            return <TabRef key={node.getId()} node={node} onTabMount={handleTabMount} onRectChange={handleRectChange} onVisibilityChange={handleVisibilityChange} />;
+            return <TabRef key={node.getId()} node={node} selected={node.isSelected()} onTabMount={handleTabMount} onRectChange={handleRectChange} onVisibilityChange={handleVisibilityChange} />;
         },
         [handleTabMount, handleRectChange, handleVisibilityChange],
     );
 
-    // Wrap Layout and TabContainer in a relative container so TabContainer's
-    // absolute positioning aligns with Layout's coordinate system.
-    // Uses flex: 1 for flex containers. The flex container must have:
-    // - position: relative (for absolute children)
-    // - display: flex with flex-direction: column (to pass flex sizing to children)
-    // - overflow: hidden (to establish containing block for absolute children)
-    // The inner Layout uses position: absolute with inset: 0.
+    // Wrap Layout and TabContainer in a container that fills its parent.
+    // Uses position: absolute with inset: 0 to fill, which works regardless of whether
+    // the parent is a flex container. Layout also uses position: absolute with inset: 0,
+    // so this wrapper provides a positioning context for both Layout and TabContainer.
     // The "flexlayout__optimized_layout" class allows CSS to target this wrapper.
     return (
-        <div className="flexlayout__optimized_layout" style={{ position: "relative", flex: "1 1 0", display: "flex", flexDirection: "column", minHeight: 0, minWidth: 0, overflow: "hidden" }}>
+        <div className="flexlayout__optimized_layout" style={{ position: "absolute", inset: 0, overflow: "hidden" }}>
             <Layout model={model} factory={factory} classNameMapper={classNameMapper} onDragStateChange={handleDragStateChange} onModelChange={handleModelChange} {...layoutProps} />
             <TabContainer tabs={tabs} renderTab={renderTab} isDragging={isDragging} classNameMapper={classNameMapper} model={model} />
         </div>

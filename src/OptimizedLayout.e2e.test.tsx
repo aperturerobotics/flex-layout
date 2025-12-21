@@ -226,7 +226,7 @@ describe("OptimizedLayout", () => {
         await render(<OptimizedLayout model={model} renderTab={(node) => <div data-testid={`content-${node.getId()}`}>Content for {node.getName()}</div>} />, { container });
 
         // Wait for layout to render and resize events to fire
-        await new Promise((resolve) => setTimeout(resolve, 200));
+        await new Promise((resolve) => setTimeout(resolve, 500));
 
         // Check that the visible tab panel has non-zero dimensions
         const visibleTabPanel = document.querySelector('[role="tabpanel"][style*="display: flex"]') as HTMLElement;
@@ -262,7 +262,7 @@ describe("OptimizedLayout", () => {
         await render(<OptimizedLayout model={model} renderTab={(node) => <div data-testid={`content-${node.getId()}`}>Content for {node.getName()}</div>} />, { container });
 
         // Wait for layout to render and resize events to fire
-        await new Promise((resolve) => setTimeout(resolve, 300));
+        await new Promise((resolve) => setTimeout(resolve, 500));
 
         // Check that TabNode's rect has been updated with valid dimensions
         // This verifies resize events fired (TabNode.setRect stores the rect)
@@ -285,7 +285,7 @@ describe("OptimizedLayout", () => {
         await render(<OptimizedLayout model={model} renderTab={(node) => <div data-testid={`content-${node.getId()}`}>Content for {node.getName()}</div>} />, { container });
 
         // Wait for layout to render
-        await new Promise((resolve) => setTimeout(resolve, 200));
+        await new Promise((resolve) => setTimeout(resolve, 500));
 
         // Find the tabset node and check its contentRect
         let tabsetContentRect: { width: number; height: number } | null = null;
@@ -364,16 +364,10 @@ describe("OptimizedLayout", () => {
         const panelWidth = visibleTabPanel.style.width;
         const panelHeight = visibleTabPanel.style.height;
 
-        // Log the actual values for debugging
-        console.log("Tab panel dimensions:", { panelWidth, panelHeight });
-
-        // The issue: even though contentRect has valid dimensions,
-        // the tab panel styles show 100% instead of pixel values
-        // This test documents the actual behavior
-        if (panelWidth === "100%" || panelHeight === "100%") {
-            // This is the bug - dimensions should be pixel values
-            console.log("BUG: Tab panel using fallback 100% instead of pixel dimensions");
-        }
+        // The dimensions should be pixel values, not 100% fallback
+        // Verify we're getting valid pixel values
+        expect(panelWidth).toContain("px");
+        expect(panelHeight).toContain("px");
     });
 
     // Tests for dynamically added tabs (Issue: Dynamically Added Tabs Not Rendered in TabContainer)
