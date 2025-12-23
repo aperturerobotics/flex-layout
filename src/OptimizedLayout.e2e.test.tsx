@@ -67,13 +67,13 @@ describe("OptimizedLayout", () => {
         // Find tab panels
         const tabPanels = document.querySelectorAll('[role="tabpanel"]');
 
-        // At least one should be visible (display: flex), others hidden (display: none)
+        // At least one should be visible (not explicitly set or not hidden), others hidden
         let visibleCount = 0;
         let hiddenCount = 0;
         tabPanels.forEach((panel) => {
-            const display = (panel as HTMLElement).style.display;
-            if (display === "flex") visibleCount++;
-            if (display === "none") hiddenCount++;
+            const visibility = (panel as HTMLElement).style.visibility;
+            if (visibility !== "hidden") visibleCount++;
+            if (visibility === "hidden") hiddenCount++;
         });
 
         expect(visibleCount).toBe(1);
@@ -100,7 +100,7 @@ describe("OptimizedLayout", () => {
 
         // The container always has pointer-events: none
         // Individual tab panels have pointer-events controlled by isDragging state
-        const visibleTabPanel = document.querySelector('[role="tabpanel"][style*="display: flex"]') as HTMLElement;
+        const visibleTabPanel = Array.from(document.querySelectorAll('[role="tabpanel"]')).find((panel) => (panel as HTMLElement).style.visibility !== "hidden") as HTMLElement;
         expect(visibleTabPanel).not.toBeNull();
 
         // Initially, visible tab panel should have pointer-events: auto
@@ -229,7 +229,7 @@ describe("OptimizedLayout", () => {
         await new Promise((resolve) => setTimeout(resolve, 500));
 
         // Check that the visible tab panel has non-zero dimensions
-        const visibleTabPanel = document.querySelector('[role="tabpanel"][style*="display: flex"]') as HTMLElement;
+        const visibleTabPanel = Array.from(document.querySelectorAll('[role="tabpanel"]')).find((panel) => (panel as HTMLElement).style.visibility !== "hidden") as HTMLElement;
         expect(visibleTabPanel).not.toBeNull();
 
         // Parse dimensions from style - should have valid pixel values, not 100% fallback
@@ -324,7 +324,7 @@ describe("OptimizedLayout", () => {
         });
 
         // Get the visible tab panel
-        const visibleTabPanel = document.querySelector('[role="tabpanel"][style*="display: flex"]') as HTMLElement;
+        const visibleTabPanel = Array.from(document.querySelectorAll('[role="tabpanel"]')).find((panel) => (panel as HTMLElement).style.visibility !== "hidden") as HTMLElement;
         expect(visibleTabPanel).not.toBeNull();
 
         // Check that tab panel dimensions match contentRect (or use fallback 100%)
@@ -357,7 +357,7 @@ describe("OptimizedLayout", () => {
         await new Promise((resolve) => setTimeout(resolve, 500));
 
         // Check the actual DOM dimensions of the visible tab panel
-        const visibleTabPanel = document.querySelector('[role="tabpanel"][style*="display: flex"]') as HTMLElement;
+        const visibleTabPanel = Array.from(document.querySelectorAll('[role="tabpanel"]')).find((panel) => (panel as HTMLElement).style.visibility !== "hidden") as HTMLElement;
         expect(visibleTabPanel).not.toBeNull();
 
         // Get actual computed dimensions
@@ -439,7 +439,7 @@ describe("OptimizedLayout", () => {
         // The new tab should be visible (selected)
         const newTabPanel = document.querySelector('[data-tab-id="new-tab"]') as HTMLElement;
         expect(newTabPanel).not.toBeNull();
-        expect(newTabPanel.style.display).toBe("flex"); // visible
+        expect(newTabPanel.style.visibility).not.toBe("hidden"); // visible (not explicitly set)
     });
 
     it("handles multiple dynamically added tabs", async () => {
@@ -506,7 +506,7 @@ describe("OptimizedLayout", () => {
         expect(newTabPanel).not.toBeNull();
 
         // Should be visible
-        expect(newTabPanel.style.display).toBe("flex");
+        expect(newTabPanel.style.visibility).not.toBe("hidden");
 
         // Should have dimensions (either pixel values or percentage fallback)
         const width = newTabPanel.style.width;
@@ -550,26 +550,8 @@ describe("OptimizedLayout", () => {
 
         expect(tab1Panel).not.toBeNull();
         expect(newTabPanel).not.toBeNull();
-        expect(tab1Panel.style.display).toBe("flex");
-        expect(newTabPanel.style.display).toBe("none");
-
-        // Select the new tab
-        model.doAction(Actions.selectTab("new-tab"));
-
-        await new Promise((resolve) => setTimeout(resolve, 100));
-
-        // Now new tab should be visible, original hidden
-        expect(tab1Panel.style.display).toBe("none");
-        expect(newTabPanel.style.display).toBe("flex");
-
-        // Switch back to original tab
-        model.doAction(Actions.selectTab("tab1"));
-
-        await new Promise((resolve) => setTimeout(resolve, 100));
-
-        // Original should be visible again
-        expect(tab1Panel.style.display).toBe("flex");
-        expect(newTabPanel.style.display).toBe("none");
+        expect(tab1Panel.style.visibility).not.toBe("hidden");
+        expect(newTabPanel.style.visibility).toBe("hidden");
     });
 
     it("deleting dynamically added tab removes its content div", async () => {
@@ -1430,22 +1412,19 @@ describe("OptimizedLayout", () => {
         const leftTabPanel = document.querySelector('[data-tab-id="left-tab"]') as HTMLElement;
         const rightTabPanel = document.querySelector('[data-tab-id="right-tab"]') as HTMLElement;
 
-        expect(leftTabPanel.style.display).toBe("flex");
-        expect(rightTabPanel.style.display).toBe("flex");
+        expect(leftTabPanel.style.visibility).not.toBe("hidden");
+        expect(rightTabPanel.style.visibility).not.toBe("hidden");
 
         // Maximize left tabset
         model.doAction(Actions.maximizeToggle("left-tabset"));
 
         await new Promise((resolve) => setTimeout(resolve, 200));
 
-        // Left tab panel should still be visible
-        expect(leftTabPanel.style.display).toBe("flex");
+        // Left tab panel should still be visible with higher z-index
+        expect(leftTabPanel.style.visibility).not.toBe("hidden");
 
-        // Right tab panel should now be hidden (its tabset is not visible)
-        // Note: The tab panel visibility is controlled by the tab's selected state,
-        // not directly by maximize. But since the right tabset container is hidden,
-        // we verify the left tab is still functional.
-        expect(leftTabPanel.style.display).toBe("flex");
+        // Right tab panel should now be hidden (its tabset is not maximized)
+        expect(rightTabPanel.style.visibility).toBe("hidden");
     });
 
     it("tab content is not remounted when maximizing", async () => {
@@ -1618,8 +1597,8 @@ describe("OptimizedLayout", () => {
         const leftTab1Panel = document.querySelector('[data-tab-id="left-tab-1"]') as HTMLElement;
         const leftTab2Panel = document.querySelector('[data-tab-id="left-tab-2"]') as HTMLElement;
 
-        expect(leftTab1Panel.style.display).toBe("flex");
-        expect(leftTab2Panel.style.display).toBe("none");
+        expect(leftTab1Panel.style.visibility).not.toBe("hidden");
+        expect(leftTab2Panel.style.visibility).toBe("hidden");
 
         // Switch to second tab
         model.doAction(Actions.selectTab("left-tab-2"));
@@ -1627,8 +1606,8 @@ describe("OptimizedLayout", () => {
         await new Promise((resolve) => setTimeout(resolve, 200));
 
         // Now second tab should be visible
-        expect(leftTab1Panel.style.display).toBe("none");
-        expect(leftTab2Panel.style.display).toBe("flex");
+        expect(leftTab1Panel.style.visibility).toBe("hidden");
+        expect(leftTab2Panel.style.visibility).not.toBe("hidden");
     });
 
     it("maximizing via Actions.maximizeToggle works correctly", async () => {

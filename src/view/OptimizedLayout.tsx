@@ -177,7 +177,7 @@ const TabPanel = memo(function TabPanel({
             className={className + (contentClassName ? " " + contentClassName : "")}
             style={{
                 position: "absolute",
-                visibility: isHidden ? "hidden" : "visible",
+                visibility: isHidden ? "hidden" : undefined,
                 left: hasValidDimensions ? rect.x : 0,
                 top: hasValidDimensions ? rect.y : 0,
                 width: hasValidDimensions ? rect.width : "100%",
