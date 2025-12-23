@@ -1,5 +1,5 @@
 import * as React from "react";
-import { memo, useCallback, useEffect, useMemo, useState } from "react";
+import { memo, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { Rect } from "../Rect";
 import { Action } from "../model/Action";
 import { Actions } from "../model/Actions";
@@ -121,7 +121,7 @@ const TabPanel = memo(function TabPanel({
     contentClassName,
     className,
     renderTab,
-    onPointerDown,
+    model,
     isMaximized,
     hasMaximizedTabset,
 }: {
@@ -133,16 +133,41 @@ const TabPanel = memo(function TabPanel({
     contentClassName: string | undefined;
     className: string;
     renderTab: (node: TabNode) => React.ReactNode;
-    onPointerDown: () => void;
+    model: Model;
     isMaximized: boolean;
     hasMaximizedTabset: boolean;
 }) {
+    const selfRef = useRef<HTMLDivElement | null>(null);
+
     // Use percentage-based sizing as fallback when dimensions are 0 (initial state).
     // This ensures tab content is clickable before resize events fire.
     const hasValidDimensions = rect.width > 0 && rect.height > 0;
 
     // Memoize the rendered content to prevent re-renders when only positioning changes
     const content = useMemo(() => renderTab(node), [renderTab, node]);
+
+    // Use native event listener with capture phase to ensure we catch pointer events
+    // before any child elements can handle them. This mirrors the approach in Tab.tsx.
+    useLayoutEffect(() => {
+        const element = selfRef.current;
+        if (!element) return;
+
+        const onPointerDown = () => {
+            // Get fresh parent reference each time - don't use stale closure
+            const parent = node.getParent();
+            if (parent instanceof TabSetNode) {
+                // Always dispatch the action - the model will handle if already active
+                model.doAction(Actions.setActiveTabset(parent.getId(), Model.MAIN_WINDOW_ID));
+            }
+        };
+
+        // Use capture phase to intercept before children handle the event
+        element.addEventListener("pointerdown", onPointerDown, true);
+
+        return () => {
+            element.removeEventListener("pointerdown", onPointerDown, true);
+        };
+    }, [node, model, nodeId]);
 
     // Determine visibility and zIndex based on selection and maximize state.
     //
@@ -172,6 +197,7 @@ const TabPanel = memo(function TabPanel({
 
     return (
         <div
+            ref={selfRef}
             role="tabpanel"
             data-tab-id={nodeId}
             className={className + (contentClassName ? " " + contentClassName : "")}
@@ -187,7 +213,6 @@ const TabPanel = memo(function TabPanel({
                 // Tab panels receive pointer events when visible and not dragging
                 pointerEvents: !isHidden && !isDragging ? "auto" : "none",
             }}
-            onPointerDown={onPointerDown}
         >
             {content}
         </div>
@@ -217,20 +242,6 @@ function TabContainer({
     const maximizedTabset = model.getMaximizedTabset(Model.MAIN_WINDOW_ID);
     const hasMaximizedTabset = maximizedTabset !== undefined;
 
-    // Handle pointer down on tab content to activate the parent tabset
-    const handlePointerDown = useCallback(
-        (node: TabNode) => {
-            const parent = node.getParent();
-            if (parent instanceof TabSetNode) {
-                if (!parent.isActive()) {
-                    // Use the model's doAction to set the active tabset
-                    model.doAction(Actions.setActiveTabset(parent.getId(), Model.MAIN_WINDOW_ID));
-                }
-            }
-        },
-        [model],
-    );
-
     return (
         <div className="flexlayout__optimized_layout_tab_container" data-layout-path="/tab-container">
             {Array.from(tabs.entries()).map(([nodeId, tabInfo]) => {
@@ -249,7 +260,7 @@ function TabContainer({
                         contentClassName={tabInfo.node.getContentClassName()}
                         className={className}
                         renderTab={renderTab}
-                        onPointerDown={() => handlePointerDown(tabInfo.node)}
+                        model={model}
                         isMaximized={isMaximized}
                         hasMaximizedTabset={hasMaximizedTabset}
                     />
