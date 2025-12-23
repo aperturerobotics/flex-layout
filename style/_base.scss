@@ -14,6 +14,23 @@
 }
 
 .flexlayout {
+    &__optimized_layout {
+        @include absoluteFill;
+        overflow: hidden;
+
+        &_tab_container {
+            @include absoluteFill;
+            // The container itself always has pointer-events: none
+            // so it doesn't block clicks on elements beneath it (like FlexLayout's tab bar).
+            // Individual tab panels have pointer-events: auto to receive clicks.
+            // During drag, we also disable pointer events on the children to prevent
+            // dragleave events on the Layout element.
+            pointer-events: none;
+            // Ensure tab container doesn't block FlexLayout's tab bar interactions
+            z-index: 0;
+        }
+    }
+
     &__layout {
         @include absoluteFill;
         display: flex;

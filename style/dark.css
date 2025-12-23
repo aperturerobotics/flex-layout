@@ -51,6 +51,23 @@
   --color-edge-icon: #eee;
 }
 
+.flexlayout__optimized_layout {
+  left: 0;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  position: absolute;
+  overflow: hidden;
+}
+.flexlayout__optimized_layout_tab_container {
+  left: 0;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  position: absolute;
+  pointer-events: none;
+  z-index: 0;
+}
 .flexlayout__layout {
   left: 0;
   top: 0;

@@ -122,6 +122,8 @@ const TabPanel = memo(function TabPanel({
     className,
     renderTab,
     onPointerDown,
+    isMaximized,
+    hasMaximizedTabset,
 }: {
     nodeId: string;
     node: TabNode;
@@ -132,6 +134,8 @@ const TabPanel = memo(function TabPanel({
     className: string;
     renderTab: (node: TabNode) => React.ReactNode;
     onPointerDown: () => void;
+    isMaximized: boolean;
+    hasMaximizedTabset: boolean;
 }) {
     // Use percentage-based sizing as fallback when dimensions are 0 (initial state).
     // This ensures tab content is clickable before resize events fire.
@@ -140,6 +144,32 @@ const TabPanel = memo(function TabPanel({
     // Memoize the rendered content to prevent re-renders when only positioning changes
     const content = useMemo(() => renderTab(node), [renderTab, node]);
 
+    // Determine visibility and zIndex based on selection and maximize state.
+    //
+    // Normal state (no maximize):
+    //   - Show tab if it's selected in its tabset (visible = true)
+    //
+    // Maximized state:
+    //   - Tab in maximized tabset AND selected: visible with zIndex: 11
+    //   - Tab in maximized tabset but NOT selected: hidden
+    //   - Tab NOT in maximized tabset: hidden
+    //
+    // We use visibility: hidden (not display: none) to keep components mounted
+    // and avoid unmount/remount cycles when maximizing/restoring.
+    let isHidden = !visible;
+    let zIndex: number | undefined;
+
+    if (hasMaximizedTabset) {
+        if (isMaximized && visible) {
+            // Selected tab in maximized tabset - show with higher z-index
+            zIndex = 11;
+            isHidden = false;
+        } else {
+            // Either not in maximized tabset, or not selected - hide it
+            isHidden = true;
+        }
+    }
+
     return (
         <div
             role="tabpanel"
@@ -147,14 +177,15 @@ const TabPanel = memo(function TabPanel({
             className={className + (contentClassName ? " " + contentClassName : "")}
             style={{
                 position: "absolute",
-                display: visible ? "flex" : "none",
+                visibility: isHidden ? "hidden" : "visible",
                 left: hasValidDimensions ? rect.x : 0,
                 top: hasValidDimensions ? rect.y : 0,
                 width: hasValidDimensions ? rect.width : "100%",
                 height: hasValidDimensions ? rect.height : "100%",
                 overflow: "auto",
+                zIndex,
                 // Tab panels receive pointer events when visible and not dragging
-                pointerEvents: visible && !isDragging ? "auto" : "none",
+                pointerEvents: !isHidden && !isDragging ? "auto" : "none",
             }}
             onPointerDown={onPointerDown}
         >
@@ -182,6 +213,10 @@ function TabContainer({
 }) {
     const className = classNameMapper ? classNameMapper("flexlayout__tab") : "flexlayout__tab";
 
+    // Check if there's a maximized tabset in the model
+    const maximizedTabset = model.getMaximizedTabset(Model.MAIN_WINDOW_ID);
+    const hasMaximizedTabset = maximizedTabset !== undefined;
+
     // Handle pointer down on tab content to activate the parent tabset
     const handlePointerDown = useCallback(
         (node: TabNode) => {
@@ -197,35 +232,29 @@ function TabContainer({
     );
 
     return (
-        <div
-            style={{
-                position: "absolute",
-                inset: 0,
-                // CRITICAL: The container itself always has pointer-events: none
-                // so it doesn't block clicks on elements beneath it (like FlexLayout's tab bar).
-                // Individual tab panels have pointer-events: auto to receive clicks.
-                // During drag, we also disable pointer events on the children to prevent
-                // dragleave events on the Layout element.
-                pointerEvents: "none",
-                // Ensure tab container doesn't block FlexLayout's tab bar interactions
-                zIndex: 0,
-            }}
-            data-layout-path="/tab-container"
-        >
-            {Array.from(tabs.entries()).map(([nodeId, tabInfo]) => (
-                <TabPanel
-                    key={nodeId}
-                    nodeId={nodeId}
-                    node={tabInfo.node}
-                    rect={tabInfo.rect}
-                    visible={tabInfo.visible}
-                    isDragging={isDragging}
-                    contentClassName={tabInfo.node.getContentClassName()}
-                    className={className}
-                    renderTab={renderTab}
-                    onPointerDown={() => handlePointerDown(tabInfo.node)}
-                />
-            ))}
+        <div className="flexlayout__optimized_layout_tab_container" data-layout-path="/tab-container">
+            {Array.from(tabs.entries()).map(([nodeId, tabInfo]) => {
+                // Check if this tab's parent tabset is the maximized one
+                const parent = tabInfo.node.getParent();
+                const isMaximized = parent instanceof TabSetNode && parent.isMaximized();
+
+                return (
+                    <TabPanel
+                        key={nodeId}
+                        nodeId={nodeId}
+                        node={tabInfo.node}
+                        rect={tabInfo.rect}
+                        visible={tabInfo.visible}
+                        isDragging={isDragging}
+                        contentClassName={tabInfo.node.getContentClassName()}
+                        className={className}
+                        renderTab={renderTab}
+                        onPointerDown={() => handlePointerDown(tabInfo.node)}
+                        isMaximized={isMaximized}
+                        hasMaximizedTabset={hasMaximizedTabset}
+                    />
+                );
+            })}
         </div>
     );
 }
@@ -394,8 +423,9 @@ export function OptimizedLayout({ model, renderTab, classNameMapper, onDragState
     // the parent is a flex container. Layout also uses position: absolute with inset: 0,
     // so this wrapper provides a positioning context for both Layout and TabContainer.
     // The "flexlayout__optimized_layout" class allows CSS to target this wrapper.
+    // Positioning is done via CSS class (not inline styles) to allow customization.
     return (
-        <div className="flexlayout__optimized_layout" style={{ position: "absolute", inset: 0, overflow: "hidden" }}>
+        <div className="flexlayout__optimized_layout">
             <Layout model={model} factory={factory} classNameMapper={classNameMapper} onDragStateChange={handleDragStateChange} onModelChange={handleModelChange} {...layoutProps} />
             <TabContainer tabs={tabs} renderTab={renderTab} isDragging={isDragging} classNameMapper={classNameMapper} model={model} />
         </div>

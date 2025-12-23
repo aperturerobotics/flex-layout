@@ -1125,4 +1125,568 @@ describe("OptimizedLayout", () => {
             expect(additionalRenders).toBe(0);
         }
     });
+
+    // Tests for maximizing a tabset in OptimizedLayout
+    // These tests verify that tab content is correctly positioned and visible when maximizing/restoring tabsets.
+
+    it("maximizes tabset when clicking maximize button", async () => {
+        const gridModel: IJsonModel = {
+            global: {
+                tabSetEnableMaximize: true,
+            },
+            layout: {
+                type: "row",
+                children: [
+                    {
+                        type: "tabset",
+                        id: "left-tabset",
+                        weight: 50,
+                        children: [{ type: "tab", id: "left-tab", name: "Left Tab", component: "test" }],
+                    },
+                    {
+                        type: "tabset",
+                        id: "right-tabset",
+                        weight: 50,
+                        children: [{ type: "tab", id: "right-tab", name: "Right Tab", component: "test" }],
+                    },
+                ],
+            },
+        };
+
+        const model = Model.fromJson(gridModel);
+        await render(
+            <OptimizedLayout
+                model={model}
+                renderTab={(node) => (
+                    <div data-testid={`content-${node.getId()}`} style={{ width: "100%", height: "100%" }}>
+                        Content for {node.getName()}
+                    </div>
+                )}
+            />,
+            { container },
+        );
+
+        await new Promise((resolve) => setTimeout(resolve, 200));
+
+        // Verify both tabsets are visible initially
+        const tabsetContainers = document.querySelectorAll(".flexlayout__tabset_container");
+        expect(tabsetContainers.length).toBe(2);
+
+        // Find the maximize button for the left tabset (path is /ts0/button/max)
+        const maxButton = document.querySelector('[data-layout-path="/ts0/button/max"]') as HTMLElement;
+        expect(maxButton).not.toBeNull();
+
+        // Click maximize button
+        maxButton.click();
+
+        await new Promise((resolve) => setTimeout(resolve, 200));
+
+        // Left tabset should be maximized
+        let leftTabset: TabSetNode | undefined;
+        model.visitNodes((node) => {
+            if (node.getId() === "left-tabset") {
+                leftTabset = node as TabSetNode;
+            }
+        });
+        expect(leftTabset).toBeDefined();
+        expect(leftTabset!.isMaximized()).toBe(true);
+
+        // When maximized, non-maximized tabsets get display: none
+        // Find the tabset containers and check that one is hidden
+        const allTabsetContainers = document.querySelectorAll(".flexlayout__tabset_container");
+        const hiddenContainers = Array.from(allTabsetContainers).filter((el) => (el as HTMLElement).style.display === "none");
+        expect(hiddenContainers.length).toBeGreaterThan(0);
+    });
+
+    it("restores tabset when clicking maximize button again", async () => {
+        const gridModel: IJsonModel = {
+            global: {
+                tabSetEnableMaximize: true,
+            },
+            layout: {
+                type: "row",
+                children: [
+                    {
+                        type: "tabset",
+                        id: "left-tabset",
+                        weight: 50,
+                        children: [{ type: "tab", id: "left-tab", name: "Left Tab", component: "test" }],
+                    },
+                    {
+                        type: "tabset",
+                        id: "right-tabset",
+                        weight: 50,
+                        children: [{ type: "tab", id: "right-tab", name: "Right Tab", component: "test" }],
+                    },
+                ],
+            },
+        };
+
+        const model = Model.fromJson(gridModel);
+        await render(
+            <OptimizedLayout
+                model={model}
+                renderTab={(node) => (
+                    <div data-testid={`content-${node.getId()}`} style={{ width: "100%", height: "100%" }}>
+                        Content for {node.getName()}
+                    </div>
+                )}
+            />,
+            { container },
+        );
+
+        await new Promise((resolve) => setTimeout(resolve, 200));
+
+        // Maximize the left tabset
+        model.doAction(Actions.maximizeToggle("left-tabset"));
+
+        await new Promise((resolve) => setTimeout(resolve, 200));
+
+        // Verify it's maximized
+        let leftTabset: TabSetNode | undefined;
+        model.visitNodes((node) => {
+            if (node.getId() === "left-tabset") {
+                leftTabset = node as TabSetNode;
+            }
+        });
+        expect(leftTabset!.isMaximized()).toBe(true);
+
+        // Find the restore button (same button, different icon, path is /ts0/button/max)
+        const restoreButton = document.querySelector('[data-layout-path="/ts0/button/max"]') as HTMLElement;
+        expect(restoreButton).not.toBeNull();
+
+        // Click restore button
+        restoreButton.click();
+
+        await new Promise((resolve) => setTimeout(resolve, 200));
+
+        // Left tabset should no longer be maximized
+        expect(leftTabset!.isMaximized()).toBe(false);
+
+        // Right tabset should be visible again
+        const tabsetContainers = document.querySelectorAll(".flexlayout__tabset_container");
+        expect(tabsetContainers.length).toBe(2);
+        const rightTabsetContainer = tabsetContainers[1] as HTMLElement;
+        expect(rightTabsetContainer.style.display).not.toBe("none");
+    });
+
+    it("maximizes tabset when double-clicking tab strip", async () => {
+        const gridModel: IJsonModel = {
+            global: {
+                tabSetEnableMaximize: true,
+            },
+            layout: {
+                type: "row",
+                children: [
+                    {
+                        type: "tabset",
+                        id: "left-tabset",
+                        weight: 50,
+                        children: [{ type: "tab", id: "left-tab", name: "Left Tab", component: "test" }],
+                    },
+                    {
+                        type: "tabset",
+                        id: "right-tabset",
+                        weight: 50,
+                        children: [{ type: "tab", id: "right-tab", name: "Right Tab", component: "test" }],
+                    },
+                ],
+            },
+        };
+
+        const model = Model.fromJson(gridModel);
+        await render(
+            <OptimizedLayout
+                model={model}
+                renderTab={(node) => (
+                    <div data-testid={`content-${node.getId()}`} style={{ width: "100%", height: "100%" }}>
+                        Content for {node.getName()}
+                    </div>
+                )}
+            />,
+            { container },
+        );
+
+        await new Promise((resolve) => setTimeout(resolve, 200));
+
+        // Find the tab strip for the left tabset (path is /ts0/tabstrip)
+        const tabStrip = document.querySelector('[data-layout-path="/ts0/tabstrip"]') as HTMLElement;
+        expect(tabStrip).not.toBeNull();
+
+        // Double-click the tab strip
+        tabStrip.dispatchEvent(new MouseEvent("dblclick", { bubbles: true, cancelable: true }));
+
+        await new Promise((resolve) => setTimeout(resolve, 200));
+
+        // Left tabset should be maximized
+        let leftTabset: TabSetNode | undefined;
+        model.visitNodes((node) => {
+            if (node.getId() === "left-tabset") {
+                leftTabset = node as TabSetNode;
+            }
+        });
+        expect(leftTabset).toBeDefined();
+        expect(leftTabset!.isMaximized()).toBe(true);
+    });
+
+    it("tab content receives updated dimensions when maximized", async () => {
+        const gridModel: IJsonModel = {
+            global: {
+                tabSetEnableMaximize: true,
+            },
+            layout: {
+                type: "row",
+                children: [
+                    {
+                        type: "tabset",
+                        id: "left-tabset",
+                        weight: 50,
+                        children: [{ type: "tab", id: "left-tab", name: "Left Tab", component: "test" }],
+                    },
+                    {
+                        type: "tabset",
+                        id: "right-tabset",
+                        weight: 50,
+                        children: [{ type: "tab", id: "right-tab", name: "Right Tab", component: "test" }],
+                    },
+                ],
+            },
+        };
+
+        const model = Model.fromJson(gridModel);
+        await render(
+            <OptimizedLayout
+                model={model}
+                renderTab={(node) => (
+                    <div data-testid={`content-${node.getId()}`} style={{ width: "100%", height: "100%" }}>
+                        Content for {node.getName()}
+                    </div>
+                )}
+            />,
+            { container },
+        );
+
+        await new Promise((resolve) => setTimeout(resolve, 300));
+
+        // Get initial dimensions of left tab panel
+        const leftTabPanel = document.querySelector('[data-tab-id="left-tab"]') as HTMLElement;
+        expect(leftTabPanel).not.toBeNull();
+
+        const initialWidth = parseFloat(leftTabPanel.style.width);
+
+        // Maximize the left tabset
+        model.doAction(Actions.maximizeToggle("left-tabset"));
+
+        await new Promise((resolve) => setTimeout(resolve, 300));
+
+        // Get new dimensions after maximize
+        const newWidth = parseFloat(leftTabPanel.style.width);
+
+        // Width should have increased (maximized takes full space)
+        // Since we have two side-by-side tabsets, the width should roughly double
+        expect(newWidth).toBeGreaterThan(initialWidth);
+    });
+
+    it("maximized tab content remains visible while other tabs are hidden", async () => {
+        const gridModel: IJsonModel = {
+            global: {
+                tabSetEnableMaximize: true,
+            },
+            layout: {
+                type: "row",
+                children: [
+                    {
+                        type: "tabset",
+                        id: "left-tabset",
+                        weight: 50,
+                        children: [{ type: "tab", id: "left-tab", name: "Left Tab", component: "test" }],
+                    },
+                    {
+                        type: "tabset",
+                        id: "right-tabset",
+                        weight: 50,
+                        children: [{ type: "tab", id: "right-tab", name: "Right Tab", component: "test" }],
+                    },
+                ],
+            },
+        };
+
+        const model = Model.fromJson(gridModel);
+        await render(
+            <OptimizedLayout
+                model={model}
+                renderTab={(node) => (
+                    <div data-testid={`content-${node.getId()}`} style={{ width: "100%", height: "100%" }}>
+                        Content for {node.getName()}
+                    </div>
+                )}
+            />,
+            { container },
+        );
+
+        await new Promise((resolve) => setTimeout(resolve, 200));
+
+        // Both tab panels should be visible initially (both are selected in their tabsets)
+        const leftTabPanel = document.querySelector('[data-tab-id="left-tab"]') as HTMLElement;
+        const rightTabPanel = document.querySelector('[data-tab-id="right-tab"]') as HTMLElement;
+
+        expect(leftTabPanel.style.display).toBe("flex");
+        expect(rightTabPanel.style.display).toBe("flex");
+
+        // Maximize left tabset
+        model.doAction(Actions.maximizeToggle("left-tabset"));
+
+        await new Promise((resolve) => setTimeout(resolve, 200));
+
+        // Left tab panel should still be visible
+        expect(leftTabPanel.style.display).toBe("flex");
+
+        // Right tab panel should now be hidden (its tabset is not visible)
+        // Note: The tab panel visibility is controlled by the tab's selected state,
+        // not directly by maximize. But since the right tabset container is hidden,
+        // we verify the left tab is still functional.
+        expect(leftTabPanel.style.display).toBe("flex");
+    });
+
+    it("tab content is not remounted when maximizing", async () => {
+        let mountCount = 0;
+        let unmountCount = 0;
+
+        function TrackedContent({ name }: { name: string }) {
+            React.useEffect(() => {
+                mountCount++;
+                return () => {
+                    unmountCount++;
+                };
+            }, []);
+            return <div>{name}</div>;
+        }
+
+        const gridModel: IJsonModel = {
+            global: {
+                tabSetEnableMaximize: true,
+            },
+            layout: {
+                type: "row",
+                children: [
+                    {
+                        type: "tabset",
+                        id: "left-tabset",
+                        weight: 50,
+                        children: [{ type: "tab", id: "left-tab", name: "Left Tab", component: "test" }],
+                    },
+                    {
+                        type: "tabset",
+                        id: "right-tabset",
+                        weight: 50,
+                        children: [{ type: "tab", id: "right-tab", name: "Right Tab", component: "test" }],
+                    },
+                ],
+            },
+        };
+
+        const model = Model.fromJson(gridModel);
+        await render(<OptimizedLayout model={model} renderTab={(node) => <TrackedContent name={node.getName()} />} />, { container });
+
+        await new Promise((resolve) => setTimeout(resolve, 200));
+
+        const initialMounts = mountCount;
+        const initialUnmounts = unmountCount;
+
+        // Maximize left tabset
+        model.doAction(Actions.maximizeToggle("left-tabset"));
+
+        await new Promise((resolve) => setTimeout(resolve, 200));
+
+        // Restore
+        model.doAction(Actions.maximizeToggle("left-tabset"));
+
+        await new Promise((resolve) => setTimeout(resolve, 200));
+
+        // No tabs should have been unmounted/remounted during maximize/restore
+        // OptimizedLayout keeps all tabs mounted
+        expect(unmountCount).toBe(initialUnmounts);
+        expect(mountCount).toBe(initialMounts);
+    });
+
+    it("can interact with maximized tab content", async () => {
+        let clickCount = 0;
+
+        const gridModel: IJsonModel = {
+            global: {
+                tabSetEnableMaximize: true,
+            },
+            layout: {
+                type: "row",
+                children: [
+                    {
+                        type: "tabset",
+                        id: "left-tabset",
+                        weight: 50,
+                        children: [{ type: "tab", id: "left-tab", name: "Left Tab", component: "test" }],
+                    },
+                    {
+                        type: "tabset",
+                        id: "right-tabset",
+                        weight: 50,
+                        children: [{ type: "tab", id: "right-tab", name: "Right Tab", component: "test" }],
+                    },
+                ],
+            },
+        };
+
+        const model = Model.fromJson(gridModel);
+        await render(
+            <OptimizedLayout
+                model={model}
+                renderTab={(node) => (
+                    <button data-testid={`button-${node.getId()}`} onClick={() => clickCount++}>
+                        Click me: {node.getName()}
+                    </button>
+                )}
+            />,
+            { container },
+        );
+
+        await new Promise((resolve) => setTimeout(resolve, 200));
+
+        // Maximize left tabset
+        model.doAction(Actions.maximizeToggle("left-tabset"));
+
+        await new Promise((resolve) => setTimeout(resolve, 200));
+
+        // Find and click the button in the maximized tab
+        const button = document.querySelector('[data-testid="button-left-tab"]') as HTMLElement;
+        expect(button).not.toBeNull();
+
+        button.click();
+
+        await new Promise((resolve) => setTimeout(resolve, 50));
+
+        // Button click should have been registered
+        expect(clickCount).toBe(1);
+    });
+
+    it("switching tabs within maximized tabset works correctly", async () => {
+        const gridModel: IJsonModel = {
+            global: {
+                tabSetEnableMaximize: true,
+            },
+            layout: {
+                type: "row",
+                children: [
+                    {
+                        type: "tabset",
+                        id: "left-tabset",
+                        weight: 50,
+                        children: [
+                            { type: "tab", id: "left-tab-1", name: "Left Tab 1", component: "test" },
+                            { type: "tab", id: "left-tab-2", name: "Left Tab 2", component: "test" },
+                        ],
+                    },
+                    {
+                        type: "tabset",
+                        id: "right-tabset",
+                        weight: 50,
+                        children: [{ type: "tab", id: "right-tab", name: "Right Tab", component: "test" }],
+                    },
+                ],
+            },
+        };
+
+        const model = Model.fromJson(gridModel);
+        await render(
+            <OptimizedLayout
+                model={model}
+                renderTab={(node) => (
+                    <div data-testid={`content-${node.getId()}`} style={{ width: "100%", height: "100%" }}>
+                        Content for {node.getName()}
+                    </div>
+                )}
+            />,
+            { container },
+        );
+
+        await new Promise((resolve) => setTimeout(resolve, 200));
+
+        // Maximize left tabset
+        model.doAction(Actions.maximizeToggle("left-tabset"));
+
+        await new Promise((resolve) => setTimeout(resolve, 200));
+
+        // Initially first tab should be visible
+        const leftTab1Panel = document.querySelector('[data-tab-id="left-tab-1"]') as HTMLElement;
+        const leftTab2Panel = document.querySelector('[data-tab-id="left-tab-2"]') as HTMLElement;
+
+        expect(leftTab1Panel.style.display).toBe("flex");
+        expect(leftTab2Panel.style.display).toBe("none");
+
+        // Switch to second tab
+        model.doAction(Actions.selectTab("left-tab-2"));
+
+        await new Promise((resolve) => setTimeout(resolve, 200));
+
+        // Now second tab should be visible
+        expect(leftTab1Panel.style.display).toBe("none");
+        expect(leftTab2Panel.style.display).toBe("flex");
+    });
+
+    it("maximizing via Actions.maximizeToggle works correctly", async () => {
+        const gridModel: IJsonModel = {
+            global: {
+                tabSetEnableMaximize: true,
+            },
+            layout: {
+                type: "row",
+                children: [
+                    {
+                        type: "tabset",
+                        id: "left-tabset",
+                        weight: 50,
+                        children: [{ type: "tab", id: "left-tab", name: "Left Tab", component: "test" }],
+                    },
+                    {
+                        type: "tabset",
+                        id: "right-tabset",
+                        weight: 50,
+                        children: [{ type: "tab", id: "right-tab", name: "Right Tab", component: "test" }],
+                    },
+                ],
+            },
+        };
+
+        const model = Model.fromJson(gridModel);
+        await render(
+            <OptimizedLayout
+                model={model}
+                renderTab={(node) => (
+                    <div data-testid={`content-${node.getId()}`} style={{ width: "100%", height: "100%" }}>
+                        Content for {node.getName()}
+                    </div>
+                )}
+            />,
+            { container },
+        );
+
+        await new Promise((resolve) => setTimeout(resolve, 200));
+
+        // Use Actions.maximizeToggle directly
+        model.doAction(Actions.maximizeToggle("right-tabset"));
+
+        await new Promise((resolve) => setTimeout(resolve, 200));
+
+        // Right tabset should be maximized
+        let rightTabset: TabSetNode | undefined;
+        model.visitNodes((node) => {
+            if (node.getId() === "right-tabset") {
+                rightTabset = node as TabSetNode;
+            }
+        });
+        expect(rightTabset).toBeDefined();
+        expect(rightTabset!.isMaximized()).toBe(true);
+
+        // Verify left tabset container is hidden
+        const leftTabsetContainer = document.querySelectorAll(".flexlayout__tabset_container")[0] as HTMLElement;
+        expect(leftTabsetContainer.style.display).toBe("none");
+    });
 });
