@@ -181,11 +181,15 @@ const TabPanel = memo(function TabPanel({
     //
     // We use visibility: hidden (not display: none) to keep components mounted
     // and avoid unmount/remount cycles when maximizing/restoring.
-    let isHidden = !visible;
+    //
+    // Note: We check node.isSelected() directly here in addition to the visible prop
+    // because visibility state updates may be delayed during maximize transitions.
+    const isSelected = visible || node.isSelected();
+    let isHidden = !isSelected;
     let zIndex: number | undefined;
 
     if (hasMaximizedTabset) {
-        if (isMaximized && visible) {
+        if (isMaximized && isSelected) {
             // Selected tab in maximized tabset - show with higher z-index
             zIndex = 11;
             isHidden = false;
@@ -229,21 +233,29 @@ function TabContainer({
     isDragging,
     classNameMapper,
     model,
+    maximizedTabsetId,
 }: {
     tabs: Map<string, TabInfo>;
     renderTab: (node: TabNode) => React.ReactNode;
     isDragging: boolean;
     classNameMapper?: (defaultClassName: string) => string;
     model: Model;
+    maximizedTabsetId: string | undefined;
 }) {
+    // maximizedTabsetId is used as a render dependency - when it changes, this component re-renders
+    void maximizedTabsetId;
     const className = classNameMapper ? classNameMapper("flexlayout__tab") : "flexlayout__tab";
 
     // Check if there's a maximized tabset in the model
     const maximizedTabset = model.getMaximizedTabset(Model.MAIN_WINDOW_ID);
     const hasMaximizedTabset = maximizedTabset !== undefined;
 
+    // When a tabset is maximized, the tab container needs a higher z-index
+    // to appear above the maximized tabset's portal (which renders the tabbar)
+    const containerStyle: React.CSSProperties = hasMaximizedTabset ? { zIndex: 10 } : {};
+
     return (
-        <div className="flexlayout__optimized_layout_tab_container" data-layout-path="/tab-container">
+        <div className="flexlayout__optimized_layout_tab_container" data-layout-path="/tab-container" style={containerStyle}>
             {Array.from(tabs.entries()).map(([nodeId, tabInfo]) => {
                 // Check if this tab's parent tabset is the maximized one
                 const parent = tabInfo.node.getParent();
@@ -291,6 +303,8 @@ function TabContainer({
 export function OptimizedLayout({ model, renderTab, classNameMapper, onDragStateChange, onModelChange: userOnModelChange, ...layoutProps }: IOptimizedLayoutProps) {
     const [isDragging, setIsDragging] = useState(false);
     const [tabs, setTabs] = useState<Map<string, TabInfo>>(() => new Map());
+    // Track maximized tabset to trigger re-renders when maximize state changes
+    const [maximizedTabsetId, setMaximizedTabsetId] = useState<string | undefined>(() => model.getMaximizedTabset(Model.MAIN_WINDOW_ID)?.getId());
 
     // Sync tabs with model - collects all TabNodes and updates the tabs Map
     const syncTabsWithModel = useCallback(
@@ -393,6 +407,10 @@ export function OptimizedLayout({ model, renderTab, classNameMapper, onDragState
     // Handle model changes (called when model.doAction() modifies the model)
     const handleModelChange = useCallback(
         (changedModel: Model, action: Action) => {
+            // Update maximized tabset state to trigger re-renders when maximize state changes
+            const newMaximizedId = changedModel.getMaximizedTabset(Model.MAIN_WINDOW_ID)?.getId();
+            setMaximizedTabsetId(newMaximizedId);
+
             // Sync tabs with the updated model and update visibility based on selection state.
             // This is critical because TabRef components may not be rendered yet (when contentRect.height is 0),
             // so we can't rely solely on TabRef's visibility events. We must update visibility here
@@ -438,7 +456,7 @@ export function OptimizedLayout({ model, renderTab, classNameMapper, onDragState
     return (
         <div className="flexlayout__optimized_layout">
             <Layout model={model} factory={factory} classNameMapper={classNameMapper} onDragStateChange={handleDragStateChange} onModelChange={handleModelChange} {...layoutProps} />
-            <TabContainer tabs={tabs} renderTab={renderTab} isDragging={isDragging} classNameMapper={classNameMapper} model={model} />
+            <TabContainer tabs={tabs} renderTab={renderTab} isDragging={isDragging} classNameMapper={classNameMapper} model={model} maximizedTabsetId={maximizedTabsetId} />
         </div>
     );
 }
