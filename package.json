@@ -59,16 +59,16 @@
     "dist/"
   ],
   "scripts": {
-    "build": "npm run build:style && npm run build:doc && npm run build:lib && npm run build:types",
-    "build:min": "npm run build:style && npm run build:doc && npm run build:lib:min && npm run build:types",
+    "build": "bun run build:style && bun run build:doc && bun run build:lib && bun run build:types",
+    "build:min": "bun run build:style && bun run build:doc && bun run build:lib:min && bun run build:types",
     "build:lib": "rimraf ./dist && esbuild --bundle --external:react --external:react-dom --format=esm --target=es2022 --platform=browser --outfile=./dist/index.mjs ./src/index.ts",
-    "build:lib:min": "npm run build:lib -- --minify",
+    "build:lib:min": "bun run build:lib -- --minify",
     "build:doc": "typedoc --out typedoc --exclude \"**/examples/**/*.tsx\" --excludeInternal --disableSources --excludePrivate --excludeProtected --readme none ./src",
     "build:style": "sass style/underline.scss style/underline.css && sass style/gray.scss style/gray.css && sass style/light.scss style/light.css && sass style/dark.scss style/dark.css",
     "build:types": "tsc --emitDeclarationOnly --declaration --outDir dist/",
-    "format": "prettier --write './style/*.scss' './{src,declarations}/**/(*.ts|*.tsx|*.html)' '*.json' '.vscode/*.json' '.github/**/*.json' '.prettierrc.yml' '.github/**/*.yml'",
+    "format": "bun run prettier --write './style/*.scss' './{src,declarations}/**/(*.ts|*.tsx|*.html)' '*.json' '.vscode/*.json' '.github/**/*.json' '.prettierrc.yml' '.github/**/*.yml'",
     "typecheck": "tsgo --noEmit -p tsconfig.json",
-    "test": "npm run typecheck && npm run test:browser",
+    "test": "bun run typecheck && bun run test:browser",
     "test:js": "vitest --config=vitest.config.ts --run --passWithNoTests",
     "test:browser": "vitest --config=vitest.browser.config.ts --run",
     "test:browser:watch": "vitest --config=vitest.browser.config.ts",
@@ -79,7 +79,7 @@
     "release:version": "npm version patch -m \"release: v%s\" --no-git-tag-version",
     "release:version:minor": "npm version minor -m \"release: v%s\" --no-git-tag-version",
     "release:commit": "git reset && git add package.json && git commit -s -m \"release: v$(node -p \"require('./package.json').version\")\" && git tag v$(node -p \"require('./package.json').version\")",
-    "release:publish": "git push && git push --tags && npm run build && npm publish"
+    "release:publish": "git push && git push --tags && bun run build && npm publish"
   },
   "peerDependencies": {
     "react": "^18.0.0 || ^19.0.0",

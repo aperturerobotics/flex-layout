@@ -879,12 +879,10 @@ describe("OptimizedLayout", () => {
     });
 
     it("does not unmount tab content during drag", async () => {
-        let mountCount = 0;
         let unmountCount = 0;
 
         function TrackedContent({ name }: { name: string }) {
             React.useEffect(() => {
-                mountCount++;
                 return () => {
                     unmountCount++;
                 };

@@ -1,5 +1,7 @@
 # FlexLayout
 
+[![npm](https://img.shields.io/npm/v/@aptre/flex-layout?style=flat-square)](https://www.npmjs.com/package/@aptre/flex-layout)
+[![Build status](https://img.shields.io/github/actions/workflow/status/aperturerobotics/flex-layout/tests.yml?style=flat-square&branch=master)](https://github.com/aperturerobotics/flex-layout/actions)
 [![GitHub](https://img.shields.io/github/license/Caplin/FlexLayout)](https://github.com/caplin/FlexLayout/blob/master/LICENSE)
 
 FlexLayout is a layout manager supporting multiple TabSets with draggable+resizable tabs.
@@ -8,7 +10,12 @@ FlexLayout is a layout manager supporting multiple TabSets with draggable+resiza
 
 **This is a feature-fork of [FlexLayout](https://github.com/caplin/FlexLayout) by Caplin.** The original project hasn't been updated in some time, so this fork includes bug fixes, performance improvements, and new features like `OptimizedLayout`.
 
-To install: `yarn add @aptre/flex-layout`
+```bash
+npm install @aptre/flex-layout
+yarn add @aptre/flex-layout
+pnpm add @aptre/flex-layout
+bun add @aptre/flex-layout
+```
 
 FlexLayout's only dependency is React.
 
