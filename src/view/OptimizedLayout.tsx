@@ -155,8 +155,7 @@ const TabPanel = memo(function TabPanel({
         const onPointerDown = () => {
             // Get fresh parent reference each time - don't use stale closure
             const parent = node.getParent();
-            if (parent instanceof TabSetNode) {
-                // Always dispatch the action - the model will handle if already active
+            if (parent instanceof TabSetNode && !parent.isActive()) {
                 model.doAction(Actions.setActiveTabset(parent.getId(), Model.MAIN_WINDOW_ID));
             }
         };
