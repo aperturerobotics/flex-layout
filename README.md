@@ -3,6 +3,7 @@
 [![npm](https://img.shields.io/npm/v/@aptre/flex-layout?style=flat-square)](https://www.npmjs.com/package/@aptre/flex-layout)
 [![Build status](https://img.shields.io/github/actions/workflow/status/aperturerobotics/flex-layout/tests.yml?style=flat-square&branch=master)](https://github.com/aperturerobotics/flex-layout/actions)
 [![GitHub](https://img.shields.io/github/license/Caplin/FlexLayout)](https://github.com/caplin/FlexLayout/blob/master/LICENSE)
+[![Website](https://img.shields.io/badge/demo-flexlayout.spacewave.app-blue?style=flat-square)](https://flexlayout.spacewave.app)
 
 FlexLayout is a layout manager supporting multiple TabSets with draggable+resizable tabs.
 
@@ -43,15 +44,16 @@ Features:
 
 ## Demo
 
-To demo and test this library, clone this repo, then:
+Try the interactive demo at [flexlayout.spacewave.app](https://flexlayout.spacewave.app).
+
+API documentation is available at [flexlayout.spacewave.app/typedoc/](https://flexlayout.spacewave.app/typedoc/).
+
+To run the tests locally, clone this repo, then:
 
 ```
-npm i -g yarn
-yarn
-yarn test:browser
+bun install
+bun run test:browser
 ```
-
-Your browser will open to show + all the tests with vitest Browser Mode.
 
 ## Installation
 
@@ -349,7 +351,7 @@ Example:
 layoutRef.current.addTabToTabSet("NAVIGATION", {type:"tab", component:"grid", name:"a grid"});
 ```
 
-This would add a new grid component to the tab set with id "NAVIGATION" (where layoutRef is a ref to the Layout element, see https://reactjs.org/docs/refs-and-the-dom.html ).
+This would add a new grid component to the tab set with id "NAVIGATION" (where layoutRef is a ref to the Layout element, see https://react.dev/learn/referencing-values-with-refs ).
 
 ## Tab Node Events
 

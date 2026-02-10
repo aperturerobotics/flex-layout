@@ -4,6 +4,7 @@
   "description": "A multi-tab docking layout manager",
   "version": "0.5.13",
   "license": "ISC",
+  "homepage": "https://flexlayout.spacewave.app",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/aperturerobotics/flex-layout.git"
@@ -79,7 +80,10 @@
     "release:version": "npm version patch -m \"release: v%s\" --no-git-tag-version",
     "release:version:minor": "npm version minor -m \"release: v%s\" --no-git-tag-version",
     "release:commit": "git reset && git add package.json && git commit -s -m \"release: v$(node -p \"require('./package.json').version\")\" && git tag v$(node -p \"require('./package.json').version\")",
-    "release:publish": "git push && git push --tags"
+    "release:publish": "git push && git push --tags",
+    "website:build": "bun run build:style && bun run build:doc && cd website && bun install && bun run build && cp -r ../typedoc dist/typedoc",
+    "website:dev": "cd website && bun run dev",
+    "website:preview": "cd website && bun run preview"
   },
   "peerDependencies": {
     "react": "^18.0.0 || ^19.0.0",
