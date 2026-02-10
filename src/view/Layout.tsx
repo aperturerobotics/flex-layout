@@ -194,6 +194,7 @@ export class LayoutInternal extends Component<ILayoutInternalProps, ILayoutInter
     private currentDocument?: Document;
     private icons: IIcons;
     private resizeObserver?: ResizeObserver;
+    private onVisibilityChange!: () => void;
 
     private dragEnterCount: number = 0;
     private dragging: boolean = false;
@@ -243,9 +244,10 @@ export class LayoutInternal extends Component<ILayoutInternalProps, ILayoutInter
         this.updateLayoutMetrics();
 
         // allow tabs to overlay when hidden
-        document.addEventListener("visibilitychange", () => {
+        this.onVisibilityChange = () => {
             this.redraw("visibility change");
-        });
+        };
+        document.addEventListener("visibilitychange", this.onVisibilityChange);
     }
 
     componentDidUpdate() {
@@ -265,6 +267,7 @@ export class LayoutInternal extends Component<ILayoutInternalProps, ILayoutInter
     }
 
     componentWillUnmount() {
+        document.removeEventListener("visibilitychange", this.onVisibilityChange);
         if (this.selfRef.current) {
             this.resizeObserver?.unobserve(this.selfRef.current);
         }
@@ -1048,8 +1051,6 @@ export class LayoutInternal extends Component<ILayoutInternalProps, ILayoutInter
 
     // *************************** End Drag Drop *************************************
 }
-
-export const FlexLayoutVersion = "0.8.1";
 
 export type DragRectRenderCallback = (content: ReactNode | undefined, node?: Node, json?: IJsonTabNode) => ReactNode | undefined;
 

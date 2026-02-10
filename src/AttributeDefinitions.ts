@@ -89,8 +89,8 @@ export class AttributeDefinitions {
         for (const attr of childAttributes.attributes) {
             if (attr.modelName && this.nameToAttribute.has(attr.modelName)) {
                 const pairedAttr = this.nameToAttribute.get(attr.modelName)!;
-                pairedAttr.setpairedAttr(attr);
-                attr.setpairedAttr(pairedAttr);
+                pairedAttr.setPairedAttr(attr);
+                attr.setPairedAttr(pairedAttr);
                 pairedAttr.setPairedType(type);
             }
         }

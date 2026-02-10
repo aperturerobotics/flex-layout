@@ -58,7 +58,7 @@ export class Attribute {
     }
 
     // sets modelAttr for nodes, and nodeAttr for model
-    setpairedAttr(value: Attribute) {
+    setPairedAttr(value: Attribute) {
         this.pairedAttr = value;
     }
 
