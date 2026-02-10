@@ -1,9 +1,6 @@
 import * as React from "react";
-import { Node } from "../model/Node";
 import { TabNode } from "../model/TabNode";
 import { LayoutInternal } from "./Layout";
-import { TabSetNode } from "../model/TabSetNode";
-import { Rect } from "../Rect";
 import { ICloseType } from "../model/ICloseType";
 
 /** @internal */
@@ -84,60 +81,6 @@ export function startDrag(doc: Document, event: React.PointerEvent<HTMLElement>,
     doc.addEventListener("pointermove", pointerMove);
     doc.addEventListener("pointerup", pointerUp);
     doc.addEventListener("pointercancel", pointerCancel);
-}
-
-export function canDockToWindow(node: Node) {
-    if (node instanceof TabNode) {
-        return node.isEnablePopout();
-    } else if (node instanceof TabSetNode) {
-        for (const child of node.getChildren()) {
-            if ((child as TabNode).isEnablePopout() === false) {
-                return false;
-            }
-        }
-        return true;
-    }
-    return false;
-}
-
-export function keepOnScreen(rect: Rect) {
-    rect.snap(10);
-
-    const availableScreenWidth = window.screen.availWidth;
-    const availableScreenHeight = window.screen.availHeight;
-
-    if (rect.x + rect.width > availableScreenWidth || rect.y + rect.height > availableScreenHeight) {
-        // Adjust the rectangle to fit within the available screen space
-        rect.x = Math.max(0, Math.min(rect.x, availableScreenWidth - rect.width));
-        rect.y = Math.max(0, Math.min(rect.y, availableScreenHeight - rect.height));
-    }
-
-    return rect;
-}
-
-export function isOnScreen(rect: Rect) {
-    const availableScreenWidth = window.screen.availWidth;
-    const availableScreenHeight = window.screen.availHeight;
-
-    return (rect.x >= 0 && rect.getRight() <= availableScreenWidth && rect.y >= 0) || rect.getBottom() <= availableScreenHeight;
-}
-
-export function copyInlineStyles(source: HTMLElement, target: HTMLElement): boolean {
-    // Get the inline style attribute from the source element
-    const sourceStyle = source.getAttribute("style");
-    const targetStyle = target.getAttribute("style");
-    if (sourceStyle === targetStyle) return false;
-
-    // console.log("copyInlineStyles", sourceStyle);
-
-    if (sourceStyle) {
-        // Set the style attribute on the target element
-        target.setAttribute("style", sourceStyle);
-    } else {
-        // If the source has no inline style, clear the target's style attribute
-        target.removeAttribute("style");
-    }
-    return true;
 }
 
 export function isSafari() {

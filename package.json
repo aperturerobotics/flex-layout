@@ -12,7 +12,6 @@
     "react",
     "layout",
     "dock",
-    "popout",
     "tabs",
     "tabset",
     "splitter",

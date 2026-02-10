@@ -60,7 +60,7 @@ export const TabSet = (props: ITabSetProps) => {
         isFirstRender.current = false;
     });
 
-    // this must be after the useEffect, so the node rect is already set (else window popin will not position tabs correctly)
+    // this must be after the useEffect, so the node rect is already set
     const { selfRef, position, userControlledLeft, hiddenTabs, onMouseWheel, tabsTruncated } = useTabOverflow(node, Orientation.HORZ, buttonBarRef, stickyButtonsRef);
 
     const onOverflowClick = (event: React.MouseEvent<HTMLElement, MouseEvent>) => {
@@ -135,14 +135,6 @@ export const TabSet = (props: ITabSetProps) => {
         event.stopPropagation();
     };
 
-    const onPopoutTab = (event: React.MouseEvent<HTMLElement, MouseEvent>) => {
-        if (selectedTabNode !== undefined) {
-            layout.doAction(Actions.popoutTab(selectedTabNode.getId()));
-            // layout.doAction(Actions.popoutTabset(node.getId()));
-        }
-        event.stopPropagation();
-    };
-
     const onDoubleClick = (_event: React.MouseEvent<HTMLElement, MouseEvent>) => {
         if (node.canMaximize()) {
             layout.maximize(node);
@@ -158,7 +150,6 @@ export const TabSet = (props: ITabSetProps) => {
         tabStripInnerRef.current.scrollLeft = 0;
     }
 
-    const selectedTabNode: TabNode = node.getSelectedNode() as TabNode;
     const path = node.getPath();
 
     const tabs = [];
@@ -239,22 +230,6 @@ export const TabSet = (props: ITabSetProps) => {
                 </button>,
             );
         }
-    }
-
-    if (selectedTabNode !== undefined && layout.isSupportsPopout() && selectedTabNode.isEnablePopout() && selectedTabNode.isEnablePopoutIcon()) {
-        const popoutTitle = layout.i18nName(I18nLabel.Popout_Tab);
-        buttons.push(
-            <button
-                key="popout"
-                data-layout-path={path + "/button/popout"}
-                title={popoutTitle}
-                className={cm(CLASSES.FLEXLAYOUT__TAB_TOOLBAR_BUTTON) + " " + cm(CLASSES.FLEXLAYOUT__TAB_TOOLBAR_BUTTON_FLOAT)}
-                onClick={onPopoutTab}
-                onPointerDown={onInterceptPointerDown}
-            >
-                {typeof icons.popout === "function" ? icons.popout(selectedTabNode) : icons.popout}
-            </button>,
-        );
     }
 
     if (node.canMaximize()) {

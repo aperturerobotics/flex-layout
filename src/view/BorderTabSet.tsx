@@ -67,14 +67,6 @@ export const BorderTabSet = (props: IBorderTabSetProps) => {
         userControlledLeft.current = false;
     };
 
-    const onPopoutTab = (event: React.MouseEvent<HTMLElement, MouseEvent>) => {
-        const selectedTabNode = border.getChildren()[border.getSelected()] as TabNode;
-        if (selectedTabNode !== undefined) {
-            layout.doAction(Actions.popoutTab(selectedTabNode.getId()));
-        }
-        event.stopPropagation();
-    };
-
     const cm = layout.getClassName;
 
     const tabButtons: React.ReactNode[] = [];
@@ -166,24 +158,6 @@ export const BorderTabSet = (props: IBorderTabSetProps) => {
         );
     }
 
-    const selectedIndex = border.getSelected();
-    if (selectedIndex !== -1) {
-        const selectedTabNode = border.getChildren()[selectedIndex] as TabNode;
-        if (selectedTabNode !== undefined && layout.isSupportsPopout() && selectedTabNode.isEnablePopout()) {
-            const popoutTitle = layout.i18nName(I18nLabel.Popout_Tab);
-            buttons.push(
-                <button
-                    key="popout"
-                    title={popoutTitle}
-                    className={cm(CLASSES.FLEXLAYOUT__BORDER_TOOLBAR_BUTTON) + " " + cm(CLASSES.FLEXLAYOUT__BORDER_TOOLBAR_BUTTON_FLOAT)}
-                    onClick={onPopoutTab}
-                    onPointerDown={onInterceptPointerDown}
-                >
-                    {typeof icons.popout === "function" ? icons.popout(selectedTabNode) : icons.popout}
-                </button>,
-            );
-        }
-    }
     const toolbar = (
         <div key="toolbar" ref={toolbarRef} className={cm(CLASSES.FLEXLAYOUT__BORDER_TOOLBAR) + " " + cm(CLASSES.FLEXLAYOUT__BORDER_TOOLBAR_ + border.getLocation().getName())}>
             {buttons}

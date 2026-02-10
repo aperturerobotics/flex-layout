@@ -24,8 +24,6 @@ export enum CLASSES {
     FLEXLAYOUT__BORDER_TOOLBAR = "flexlayout__border_toolbar",
     FLEXLAYOUT__BORDER_TOOLBAR_ = "flexlayout__border_toolbar_",
     FLEXLAYOUT__BORDER_TOOLBAR_BUTTON = "flexlayout__border_toolbar_button",
-    FLEXLAYOUT__BORDER_TOOLBAR_BUTTON_FLOAT = "flexlayout__border_toolbar_button-float",
-
     FLEXLAYOUT__DRAG_RECT = "flexlayout__drag_rect",
 
     FLEXLAYOUT__EDGE_RECT = "flexlayout__edge_rect",
@@ -36,9 +34,6 @@ export enum CLASSES {
 
     FLEXLAYOUT__ERROR_BOUNDARY_CONTAINER = "flexlayout__error_boundary_container",
     FLEXLAYOUT__ERROR_BOUNDARY_CONTENT = "flexlayout__error_boundary_content",
-
-    FLEXLAYOUT__FLOATING_WINDOW_CONTENT = "flexlayout__floating_window_content",
-    FLEXLAYOUT__FLOATING_WINDOW_TAB = "flexlayout__floating_window_tab",
 
     FLEXLAYOUT__LAYOUT = "flexlayout__layout",
     FLEXLAYOUT__LAYOUT_MOVEABLES = "flexlayout__layout_moveables",
@@ -64,8 +59,6 @@ export enum CLASSES {
     FLEXLAYOUT__TAB = "flexlayout__tab",
     FLEXLAYOUT__TAB_POSITION = "flexlayout__tab_position",
     FLEXLAYOUT__TAB_MOVEABLE = "flexlayout__tab_moveable",
-    FLEXLAYOUT__TAB_OVERLAY = "flexlayout__tab_overlay",
-
     FLEXLAYOUT__TABSET = "flexlayout__tabset",
     FLEXLAYOUT__TABSET_CONTAINER = "flexlayout__tabset_container",
     FLEXLAYOUT__TABSET_HEADER = "flexlayout__tabset_header",
@@ -97,14 +90,10 @@ export enum CLASSES {
     FLEXLAYOUT__TAB_BUTTON_TRAILING = "flexlayout__tab_button_trailing",
     FLEXLAYOUT__TAB_BUTTON_STAMP = "flexlayout__tab_button_stamp",
 
-    FLEXLAYOUT__TAB_FLOATING = "flexlayout__tab_floating",
-    FLEXLAYOUT__TAB_FLOATING_INNER = "flexlayout__tab_floating_inner",
-
     FLEXLAYOUT__TAB_TOOLBAR = "flexlayout__tab_toolbar",
     FLEXLAYOUT__TAB_TOOLBAR_BUTTON = "flexlayout__tab_toolbar_button",
     FLEXLAYOUT__TAB_TOOLBAR_ICON = "flexlayout__tab_toolbar_icon",
     FLEXLAYOUT__TAB_TOOLBAR_BUTTON_ = "flexlayout__tab_toolbar_button-",
-    FLEXLAYOUT__TAB_TOOLBAR_BUTTON_FLOAT = "flexlayout__tab_toolbar_button-float",
     FLEXLAYOUT__TAB_TOOLBAR_STICKY_BUTTONS_CONTAINER = "flexlayout__tab_toolbar_sticky_buttons_container",
     FLEXLAYOUT__TAB_TOOLBAR_BUTTON_CLOSE = "flexlayout__tab_toolbar_button-close",
 

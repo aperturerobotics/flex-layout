@@ -1,4 +1,4 @@
-import { IJsonRect, IJsonRowNode, IJsonTabNode, IGlobalAttributes, ITabAttributes, ITabSetAttributes, IRowAttributes, IBorderAttributes } from "./IJsonModel";
+import { IJsonTabNode, IGlobalAttributes, ITabAttributes, ITabSetAttributes, IRowAttributes, IBorderAttributes } from "./IJsonModel";
 
 /** Action type constants */
 export const ActionType = {
@@ -14,10 +14,6 @@ export const ActionType = {
     MAXIMIZE_TOGGLE: "FlexLayout_MaximizeToggle",
     UPDATE_MODEL_ATTRIBUTES: "FlexLayout_UpdateModelAttributes",
     UPDATE_NODE_ATTRIBUTES: "FlexLayout_UpdateNodeAttributes",
-    POPOUT_TAB: "FlexLayout_PopoutTab",
-    POPOUT_TABSET: "FlexLayout_PopoutTabset",
-    CLOSE_WINDOW: "FlexLayout_CloseWindow",
-    CREATE_WINDOW: "FlexLayout_CreateWindow",
 } as const;
 
 export type ActionTypeValue = (typeof ActionType)[keyof typeof ActionType];
@@ -89,23 +85,6 @@ export interface UpdateNodeAttributesData {
     json: NodeAttributes;
 }
 
-export interface PopoutTabData {
-    node: string;
-}
-
-export interface PopoutTabsetData {
-    node: string;
-}
-
-export interface CloseWindowData {
-    windowId: string;
-}
-
-export interface CreateWindowData {
-    layout: IJsonRowNode;
-    rect: IJsonRect;
-}
-
 /** Map from action type to its data type */
 export interface ActionDataMap {
     [ActionType.ADD_NODE]: AddNodeData;
@@ -120,10 +99,6 @@ export interface ActionDataMap {
     [ActionType.MAXIMIZE_TOGGLE]: MaximizeToggleData;
     [ActionType.UPDATE_MODEL_ATTRIBUTES]: UpdateModelAttributesData;
     [ActionType.UPDATE_NODE_ATTRIBUTES]: UpdateNodeAttributesData;
-    [ActionType.POPOUT_TAB]: PopoutTabData;
-    [ActionType.POPOUT_TABSET]: PopoutTabsetData;
-    [ActionType.CLOSE_WINDOW]: CloseWindowData;
-    [ActionType.CREATE_WINDOW]: CreateWindowData;
 }
 
 /** Discriminated union of all Action types */
@@ -139,11 +114,7 @@ export type Action =
     | { type: typeof ActionType.ADJUST_BORDER_SPLIT; data: AdjustBorderSplitData }
     | { type: typeof ActionType.MAXIMIZE_TOGGLE; data: MaximizeToggleData }
     | { type: typeof ActionType.UPDATE_MODEL_ATTRIBUTES; data: UpdateModelAttributesData }
-    | { type: typeof ActionType.UPDATE_NODE_ATTRIBUTES; data: UpdateNodeAttributesData }
-    | { type: typeof ActionType.POPOUT_TAB; data: PopoutTabData }
-    | { type: typeof ActionType.POPOUT_TABSET; data: PopoutTabsetData }
-    | { type: typeof ActionType.CLOSE_WINDOW; data: CloseWindowData }
-    | { type: typeof ActionType.CREATE_WINDOW; data: CreateWindowData };
+    | { type: typeof ActionType.UPDATE_NODE_ATTRIBUTES; data: UpdateNodeAttributesData };
 
 /** Factory function for creating typed actions */
 export function createAction<T extends ActionTypeValue>(type: T, data: ActionDataMap[T]): Action {
