@@ -267,7 +267,7 @@ export class BorderNode extends Node implements IDropTarget {
                     const childHeight = childRect.height;
 
                     let pos = this.tabHeaderRect.x;
-                    let childCenter = 0;
+                    let childCenter;
                     for (let i = 0; i < this.children.length; i++) {
                         child = this.children[i];
                         childRect = (child as TabNode).getTabRect()!;
@@ -295,7 +295,7 @@ export class BorderNode extends Node implements IDropTarget {
                     const childWidth = childRect.width;
 
                     let pos = this.tabHeaderRect.y;
-                    let childCenter = 0;
+                    let childCenter;
                     for (let i = 0; i < this.children.length; i++) {
                         child = this.children[i];
                         childRect = (child as TabNode).getTabRect()!;

@@ -66,18 +66,7 @@ export class TabNode extends Node implements IDraggable {
     }
 
     getWindowId() {
-        if (this.parent instanceof TabSetNode) {
-            return this.parent.getWindowId();
-        }
         return Model.MAIN_WINDOW_ID;
-    }
-
-    getWindow(): Window | undefined {
-        const layoutWindow = this.model.getwindowsMap().get(this.getWindowId());
-        if (layoutWindow) {
-            return layoutWindow.window;
-        }
-        return undefined;
     }
 
     /**
@@ -99,10 +88,6 @@ export class TabNode extends Node implements IDraggable {
         return this.extra;
     }
 
-    isPoppedOut() {
-        return this.getWindowId() !== Model.MAIN_WINDOW_ID;
-    }
-
     isSelected() {
         return (this.getParent() as TabSetNode | BorderNode).getSelectedNode() === this;
     }
@@ -119,28 +104,12 @@ export class TabNode extends Node implements IDraggable {
         return this.getAttr("closeType") as ICloseType;
     }
 
-    isEnablePopout() {
-        return this.getAttr("enablePopout") as boolean;
-    }
-
-    isEnablePopoutIcon() {
-        return this.getAttr("enablePopoutIcon") as boolean;
-    }
-
-    isEnablePopoutOverlay() {
-        return this.getAttr("enablePopoutOverlay") as boolean;
-    }
-
     isEnableDrag() {
         return this.getAttr("enableDrag") as boolean;
     }
 
     isEnableRename() {
         return this.getAttr("enableRename") as boolean;
-    }
-
-    isEnableWindowReMount() {
-        return this.getAttr("enableWindowReMount") as boolean;
     }
 
     getClassName() {
@@ -347,7 +316,6 @@ export class TabNode extends Node implements IDraggable {
             .add("tabsetClassName", undefined)
             .setType(Attribute.STRING)
             .setDescription(`class applied to parent tabset when this is the only tab and it is stretched to fill the tabset`);
-        attributeDefinitions.add("enableWindowReMount", false).setType(Attribute.BOOLEAN).setDescription(`if enabled the tab will re-mount when popped out/in`);
 
         attributeDefinitions.addInherited("enableClose", "tabEnableClose").setType(Attribute.BOOLEAN).setDescription(`allow user to close tab via close button`);
         attributeDefinitions.addInherited("closeType", "tabCloseType").setType("ICloseType").setDescription(`see values in ICloseType`);
@@ -357,18 +325,6 @@ export class TabNode extends Node implements IDraggable {
         attributeDefinitions.addInherited("contentClassName", "tabContentClassName").setType(Attribute.STRING).setDescription(`class applied to tab content`);
         attributeDefinitions.addInherited("icon", "tabIcon").setType(Attribute.STRING).setDescription(`the tab icon`);
         attributeDefinitions.addInherited("enableRenderOnDemand", "tabEnableRenderOnDemand").setType(Attribute.BOOLEAN).setDescription(`whether to avoid rendering component until tab is visible`);
-        attributeDefinitions.addInherited("enablePopout", "tabEnablePopout").setType(Attribute.BOOLEAN).setAlias("enableFloat").setDescription(`enable popout (in popout capable browser)`);
-        attributeDefinitions
-            .addInherited("enablePopoutIcon", "tabEnablePopoutIcon")
-            .setType(Attribute.BOOLEAN)
-            .setDescription(`whether to show the popout icon in the tabset header if this tab enables popouts`);
-        attributeDefinitions
-            .addInherited("enablePopoutOverlay", "tabEnablePopoutOverlay")
-            .setType(Attribute.BOOLEAN)
-            .setDescription(
-                `if this tab will not work correctly in a popout window when the main window is backgrounded (inactive)
-            then enabling this option will gray out this tab`,
-            );
 
         attributeDefinitions.addInherited("borderWidth", "tabBorderWidth").setType(Attribute.NUMBER).setDescription(`width when added to border, -1 will use border size`);
         attributeDefinitions.addInherited("borderHeight", "tabBorderHeight").setType(Attribute.NUMBER).setDescription(`height when added to border, -1 will use border size`);

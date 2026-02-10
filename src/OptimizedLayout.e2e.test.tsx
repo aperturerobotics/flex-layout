@@ -81,16 +81,11 @@ describe("OptimizedLayout", () => {
     });
 
     it("sets pointer-events to none on tab panels during drag", async () => {
-        let dragStateCallback: ((isDragging: boolean) => void) | undefined;
-
         const model = Model.fromJson(jsonModel);
         await render(
             <OptimizedLayout
                 model={model}
                 renderTab={(node) => <div data-testid={`content-${node.getId()}`}>Content for {node.getName()}</div>}
-                onDragStateChange={(isDragging) => {
-                    if (dragStateCallback) dragStateCallback(isDragging);
-                }}
             />,
             { container },
         );

@@ -138,7 +138,7 @@ export const Splitter = (props: ISplitterProps) => {
         void _realtime;
         const redraw = () => {
             if (outlineDiv.current) {
-                let value = 0;
+                let value;
                 if (node.getOrientation() === Orientation.VERT) {
                     value = outlineDiv.current.offsetTop;
                 } else {

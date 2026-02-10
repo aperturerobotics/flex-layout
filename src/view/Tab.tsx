@@ -50,7 +50,7 @@ export const Tab = (props: ITabProps) => {
     React.useEffect(() => {
         if (node.isSelected()) {
             if (firstSelect.current) {
-                node.restoreScrollPosition(); // if window docked back in
+                node.restoreScrollPosition();
                 firstSelect.current = false;
             }
         }
@@ -78,15 +78,7 @@ export const Tab = (props: ITabProps) => {
 
     rect.styleWithPosition(style);
 
-    let overlay = null;
-
-    if (selected) {
-        if (document.hidden && node.isEnablePopoutOverlay()) {
-            const overlayStyle: Record<string, string | number> = {};
-            rect.styleWithPosition(overlayStyle);
-            overlay = <div style={overlayStyle} className={cm(CLASSES.FLEXLAYOUT__TAB_OVERLAY)}></div>;
-        }
-    } else {
+    if (!selected) {
         style.display = "none";
     }
 
@@ -110,11 +102,5 @@ export const Tab = (props: ITabProps) => {
         className += " " + node.getContentClassName();
     }
 
-    return (
-        <>
-            {overlay}
-
-            <div ref={selfRef} style={style} className={className} data-layout-path={path} />
-        </>
-    );
+    return <div ref={selfRef} style={style} className={className} data-layout-path={path} />;
 };

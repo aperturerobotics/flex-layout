@@ -30,8 +30,6 @@ Features:
 - maximize tab set (double click tab set header or use icon)
 - tab overflow (show menu when tabs overflow, scroll tabs using mouse wheel)
 - border tab sets
-- popout tabs into new browser windows
-- submodels, allow layouts inside layouts
 - tab renaming (double click tab text to rename)
 - theming - light, underline, gray, round and dark
 - works on mobile devices (iPad, Android)
@@ -251,12 +249,11 @@ Use the standard `Layout` when:
 
 ## Model JSON Structure
 
-The model json contains 4 top level elements:
+The model json contains 3 top level elements:
 
 - global - (optional) where global options are defined
 - layout - where the main row/tabset/tabs layout hierarchy is defined
-- borders - (optional) where up to 4 borders are defined ("top", "bottom", "left", "right").
-- popouts - (optional) where the popout windows are defined
+- borders - (optional) where up to 4 borders are defined ("top", "bottom", "left", "right")
 
 The layout element is built up using 3 types of 'node':
 
@@ -379,53 +376,6 @@ Example:
 | close      |    none    | called when a tab is closed                                                                                                      |
 | visibility | {visible}  | called when the visibility of a tab changes                                                                                      |
 | save       |    none    | called before a tabnode is serialized to json, use to save node config by adding data to the object returned by node.getConfig() |
-
-## Popout Windows
-
-Tabs can be rendered into external browser windows (for use in multi-monitor setups)
-by configuring them with the enablePopout attribute. When this attribute is present
-an additional icon is shown in the tab header bar allowing the tab to be popped out
-into an external window.
-
-For popouts to work there needs to be an additional html page 'popout.html' hosted
-at the same location as the main page (copy the one from examples/demo). The popout.html is the host page for the
-popped out tab, the styles from the main page will be copied into it at runtime.
-
-Because popouts are rendering into a different document to the main layout any code in the popped out
-tab that uses the global document or window objects for event listeners will not work correctly (for example custom popup menus where the code uses document.addEventListener(...)),
-they need to instead use the document/window of the popout. To get the document/window of the popout use the
-following method on one of the elements rendered in the popout (for example a ref or target in an event handler):
-
-```
-    const currentDocument = selfRef.current.ownerDocument;
-    const currentWindow = currentDocument.defaultView!;
-```
-
-In the above code selfRef is a React ref to the toplevel element in the tab being rendered.
-
-Note: libraries may support popout windows by allowing you to specify the document to use,
-for example see the getDocument() callback in agGrid at https://www.ag-grid.com/javascript-grid-callbacks/
-
-### Limitations of Popouts
-
-- FlexLayout uses React Portals to draw the popout window content,
-  this means all the code runs in the main Window's JS context, so effectively the popout windows are just extensions of the area on which the main window can render panels.
-
-- Your code must use the popout window/document in popout windows when adding event listeners (e.g popoutDocument.addEventListener(...)).
-
-- Timers throttle when main window is in the background
-  you could implement a webworker timer replacement if needed (which will not throttle)
-- Many third party controls will use the global document for some event listeners,
-  these will not work correctly without modification
-- Some third party controls will suspend when the global document is hidden
-  you can use the tab overlay attribute to 'gray out' these tabs when the main window is hidden
-- Resize observers may be throttled (or stay attached to the main window), so you may need to use some other way to resize the component when in a popout (see aggrid component in demo).
-- Popouts will not size and position correctly when the browser is zoomed (ie set to 50% zoom)
-- Popouts cannot reload in maximized or minimized states
-- by default flexlayout will maintain react state when moving tabs between windows, but you can use the
-  enableWindowReMount tab attribute to force the component to re-mount.
-
-See this article about using React portals in this way: https://dev.to/noriste/the-challenges-of-rendering-an-openlayers-map-in-a-popup-through-react-2elh
 
 ## Alternative Layout Managers
 

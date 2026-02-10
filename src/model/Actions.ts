@@ -1,6 +1,6 @@
 import { DockLocation } from "../DockLocation";
 import { Action, ActionType, createAction, NodeAttributes } from "./Action";
-import { IJsonRect, IJsonRowNode, IJsonTabNode, IGlobalAttributes } from "./IJsonModel";
+import { IJsonTabNode, IGlobalAttributes } from "./IJsonModel";
 
 /**
  * The Action creator class for FlexLayout model actions
@@ -18,10 +18,6 @@ export class Actions {
     static MAXIMIZE_TOGGLE = ActionType.MAXIMIZE_TOGGLE;
     static UPDATE_MODEL_ATTRIBUTES = ActionType.UPDATE_MODEL_ATTRIBUTES;
     static UPDATE_NODE_ATTRIBUTES = ActionType.UPDATE_NODE_ATTRIBUTES;
-    static POPOUT_TAB = ActionType.POPOUT_TAB;
-    static POPOUT_TABSET = ActionType.POPOUT_TABSET;
-    static CLOSE_WINDOW = ActionType.CLOSE_WINDOW;
-    static CREATE_WINDOW = ActionType.CREATE_WINDOW;
 
     /**
      * Adds a tab node to the given tabset node
@@ -147,42 +143,5 @@ export class Actions {
      */
     static updateNodeAttributes(nodeId: string, attributes: NodeAttributes): Action {
         return createAction(ActionType.UPDATE_NODE_ATTRIBUTES, { node: nodeId, json: attributes });
-    }
-
-    /**
-     * Pops out the given tab node into a new browser window
-     * @param nodeId the tab node to popout
-     * @returns
-     */
-    static popoutTab(nodeId: string): Action {
-        return createAction(ActionType.POPOUT_TAB, { node: nodeId });
-    }
-
-    /**
-     * Pops out the given tab set node into a new browser window
-     * @param nodeId the tab set node to popout
-     * @returns
-     */
-    static popoutTabset(nodeId: string): Action {
-        return createAction(ActionType.POPOUT_TABSET, { node: nodeId });
-    }
-
-    /**
-     * Closes the popout window
-     * @param windowId the id of the popout window to close
-     * @returns
-     */
-    static closeWindow(windowId: string): Action {
-        return createAction(ActionType.CLOSE_WINDOW, { windowId });
-    }
-
-    /**
-     * Creates a new empty popout window with the given layout
-     * @param layout the json layout for the new window
-     * @param rect the window rectangle in screen coordinates
-     * @returns
-     */
-    static createWindow(layout: IJsonRowNode, rect: IJsonRect): Action {
-        return createAction(ActionType.CREATE_WINDOW, { layout, rect });
     }
 }

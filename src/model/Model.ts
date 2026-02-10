@@ -2,21 +2,19 @@ import { Attribute, AttributeValue } from "../Attribute";
 import { AttributeDefinitions, AttributeRecord, JsonInput } from "../AttributeDefinitions";
 import { DockLocation } from "../DockLocation";
 import { DropInfo } from "../DropInfo";
-import { Rect } from "../Rect";
 import { Action } from "./Action";
 import { Actions } from "./Actions";
 import { BorderNode } from "./BorderNode";
 import { BorderSet } from "./BorderSet";
 import { IDraggable } from "./IDraggable";
 import { IDropTarget } from "./IDropTarget";
-import { IJsonModel, IJsonPopout, IJsonRowNode, ITabSetAttributes } from "./IJsonModel";
+import { IJsonModel, ITabSetAttributes } from "./IJsonModel";
 import { Node } from "./Node";
 import { RowNode } from "./RowNode";
 import { TabNode } from "./TabNode";
 import { TabSetNode } from "./TabSetNode";
 import { randomUUID } from "./Utils";
-import { LayoutWindow } from "./LayoutWindow";
-import { isOnScreen } from "../view/Utils";
+import { LayoutInternal } from "../view/Layout";
 
 /** @internal */
 export const DefaultMin = 0;
@@ -45,9 +43,13 @@ export class Model {
     /** @internal */
     private onCreateTabSet?: (tabNode?: TabNode) => ITabSetAttributes;
     /** @internal */
-    private windows: Map<string, LayoutWindow>;
+    private _root: RowNode | undefined;
     /** @internal */
-    private rootWindow: LayoutWindow;
+    private _maximizedTabSet: TabSetNode | undefined;
+    /** @internal */
+    private _activeTabSet: TabSetNode | undefined;
+    /** @internal */
+    private _layout: LayoutInternal | undefined;
 
     /**
      * 'private' constructor. Use the static method Model.fromJson(json) to create a model
@@ -57,9 +59,6 @@ export class Model {
         this.attributes = {};
         this.idMap = new Map();
         this.borders = new BorderSet(this);
-        this.windows = new Map<string, LayoutWindow>();
-        this.rootWindow = new LayoutWindow(Model.MAIN_WINDOW_ID, Rect.empty());
-        this.windows.set(Model.MAIN_WINDOW_ID, this.rootWindow);
         this.changeListeners = [];
     }
 
@@ -67,11 +66,10 @@ export class Model {
      * Update the node tree by performing the given action,
      * Actions should be generated via static methods on the Actions class
      * @param action the action to perform
-     * @returns added Node for Actions.addNode, windowId for createWindow
+     * @returns added Node for Actions.addNode
      */
     doAction(action: Action): Node | string | undefined {
         let returnVal = undefined;
-        // console.log(action);
         switch (action.type) {
             case Actions.ADD_NODE: {
                 const newNode = new TabNode(this, action.data.json, true);
@@ -86,16 +84,14 @@ export class Model {
                 const fromNode = this.idMap.get(action.data.fromNode) as Node & IDraggable;
 
                 if (fromNode instanceof TabNode || fromNode instanceof TabSetNode || fromNode instanceof RowNode) {
-                    if (fromNode === this.getMaximizedTabset(fromNode.getWindowId())) {
-                        const fromWindow = this.windows.get(fromNode.getWindowId())!;
-                        fromWindow.maximizedTabSet = undefined;
+                    if (fromNode === this.getMaximizedTabset()) {
+                        this._maximizedTabSet = undefined;
                     }
                     const toNode = this.idMap.get(action.data.toNode) as Node & IDropTarget;
                     if (toNode instanceof TabSetNode || toNode instanceof BorderNode || toNode instanceof RowNode) {
                         toNode.drop(fromNode, DockLocation.getByName(action.data.location), action.data.index, action.data.select);
                     }
                 }
-                this.removeEmptyWindows();
                 break;
             }
             case Actions.DELETE_TAB: {
@@ -103,7 +99,6 @@ export class Model {
                 if (node instanceof TabNode) {
                     node.delete();
                 }
-                this.removeEmptyWindows();
                 break;
             }
             case Actions.DELETE_TABSET: {
@@ -124,82 +119,6 @@ export class Model {
                     }
                     this.tidy();
                 }
-                this.removeEmptyWindows();
-                break;
-            }
-            case Actions.POPOUT_TABSET: {
-                const node = this.idMap.get(action.data.node);
-                if (node instanceof TabSetNode) {
-                    const isMaximized = node.isMaximized();
-                    const oldLayoutWindow = this.windows.get(node.getWindowId())!;
-                    const windowId = randomUUID();
-                    const layoutWindow = new LayoutWindow(windowId, oldLayoutWindow.toScreenRectFunction(node.getRect()));
-                    const json = {
-                        type: "row",
-                        children: [],
-                    } as IJsonRowNode;
-                    const row = RowNode.fromJson(json, this, layoutWindow);
-                    layoutWindow.root = row;
-                    this.windows.set(windowId, layoutWindow);
-                    row.drop(node, DockLocation.CENTER, 0);
-
-                    if (isMaximized) {
-                        this.rootWindow.maximizedTabSet = undefined;
-                    }
-                }
-                this.removeEmptyWindows();
-                break;
-            }
-            case Actions.POPOUT_TAB: {
-                const node = this.idMap.get(action.data.node);
-                if (node instanceof TabNode) {
-                    const windowId = randomUUID();
-                    let r = Rect.empty();
-                    if (node.getParent() instanceof TabSetNode) {
-                        r = node.getParent()!.getRect();
-                    } else {
-                        r = (node.getParent() as BorderNode).getContentRect();
-                    }
-                    const oldLayoutWindow = this.windows.get(node.getWindowId())!;
-                    const layoutWindow = new LayoutWindow(windowId, oldLayoutWindow.toScreenRectFunction(r));
-                    const tabsetId = randomUUID();
-                    const json = {
-                        type: "row" as const,
-                        children: [{ type: "tabset" as const, id: tabsetId, children: [] }],
-                    };
-                    const row = RowNode.fromJson(json, this, layoutWindow);
-                    layoutWindow.root = row;
-                    this.windows.set(windowId, layoutWindow);
-
-                    const tabset = this.idMap.get(tabsetId) as TabSetNode & IDropTarget;
-                    tabset.drop(node, DockLocation.CENTER, 0, true);
-                }
-                this.removeEmptyWindows();
-                break;
-            }
-            case Actions.CLOSE_WINDOW: {
-                const window = this.windows.get(action.data.windowId);
-                if (window) {
-                    this.rootWindow.root?.drop(window.root!, DockLocation.CENTER, -1);
-                    this.rootWindow.visitNodes((node, _level) => {
-                        if (node instanceof RowNode) {
-                            node.setWindowId(Model.MAIN_WINDOW_ID);
-                        }
-                    });
-
-                    // this.getFirstTabSet().drop(window?.root!,DockLocation.CENTER, -1);
-
-                    this.windows.delete(action.data.windowId);
-                }
-                break;
-            }
-            case Actions.CREATE_WINDOW: {
-                const windowId = randomUUID();
-                const layoutWindow = new LayoutWindow(windowId, Rect.fromJson(action.data.rect));
-                const row = RowNode.fromJson(action.data.layout, this, layoutWindow);
-                layoutWindow.root = row;
-                this.windows.set(windowId, layoutWindow);
-                returnVal = windowId;
                 break;
             }
             case Actions.RENAME_TAB: {
@@ -211,8 +130,6 @@ export class Model {
             }
             case Actions.SELECT_TAB: {
                 const tabNode = this.idMap.get(action.data.tabNode);
-                const windowId = action.data.windowId ? action.data.windowId : Model.MAIN_WINDOW_ID;
-                const window = this.windows.get(windowId)!;
                 if (tabNode instanceof TabNode) {
                     const parent = tabNode.getParent() as Node;
                     const pos = parent.getChildren().indexOf(tabNode);
@@ -227,20 +144,18 @@ export class Model {
                         if (parent.getSelected() !== pos) {
                             parent.setSelected(pos);
                         }
-                        window.activeTabSet = parent;
+                        this._activeTabSet = parent;
                     }
                 }
                 break;
             }
             case Actions.SET_ACTIVE_TABSET: {
-                const windowId = action.data.windowId ? action.data.windowId : Model.MAIN_WINDOW_ID;
-                const window = this.windows.get(windowId)!;
                 if (action.data.tabsetNode === undefined) {
-                    window.activeTabSet = undefined;
+                    this._activeTabSet = undefined;
                 } else {
                     const tabsetNode = this.idMap.get(action.data.tabsetNode);
                     if (tabsetNode instanceof TabSetNode) {
-                        window.activeTabSet = tabsetNode;
+                        this._activeTabSet = tabsetNode;
                     }
                 }
                 break;
@@ -262,15 +177,13 @@ export class Model {
                 break;
             }
             case Actions.MAXIMIZE_TOGGLE: {
-                const windowId = action.data.windowId ? action.data.windowId : Model.MAIN_WINDOW_ID;
-                const window = this.windows.get(windowId)!;
                 const node = this.idMap.get(action.data.node);
                 if (node instanceof TabSetNode) {
-                    if (node === window.maximizedTabSet) {
-                        window.maximizedTabSet = undefined;
+                    if (node === this._maximizedTabSet) {
+                        this._maximizedTabSet = undefined;
                     } else {
-                        window.maximizedTabSet = node;
-                        window.activeTabSet = node;
+                        this._maximizedTabSet = node;
+                        this._activeTabSet = node;
                     }
                 }
 
@@ -302,28 +215,26 @@ export class Model {
     /**
      * Get the currently active tabset node
      */
-    getActiveTabset(windowId: string = Model.MAIN_WINDOW_ID) {
-        const window = this.windows.get(windowId);
-        if (window && window.activeTabSet && this.getNodeById(window.activeTabSet.getId())) {
-            return window.activeTabSet;
-        } else {
-            return undefined;
+    getActiveTabset(_windowId?: string) {
+        if (this._activeTabSet && this.getNodeById(this._activeTabSet.getId())) {
+            return this._activeTabSet;
         }
+        return undefined;
     }
 
     /**
      * Get the currently maximized tabset node
      */
-    getMaximizedTabset(windowId: string = Model.MAIN_WINDOW_ID) {
-        return this.windows.get(windowId)!.maximizedTabSet;
+    getMaximizedTabset(_windowId?: string) {
+        return this._maximizedTabSet;
     }
 
     /**
      * Gets the root RowNode of the model
      * @returns {RowNode}
      */
-    getRoot(windowId: string = Model.MAIN_WINDOW_ID) {
-        return this.windows.get(windowId)!.root!;
+    getRoot(_windowId?: string) {
+        return this._root!;
     }
 
     isRootOrientationVertical() {
@@ -342,8 +253,14 @@ export class Model {
         return this.borders;
     }
 
-    getwindowsMap() {
-        return this.windows;
+    /** @internal */
+    get layout(): LayoutInternal | undefined {
+        return this._layout;
+    }
+
+    /** @internal */
+    set layout(value: LayoutInternal | undefined) {
+        this._layout = value;
     }
 
     /**
@@ -352,18 +269,7 @@ export class Model {
      */
     visitNodes(fn: (node: Node, level: number) => void) {
         this.borders.forEachNode(fn);
-        for (const [_, w] of this.windows) {
-            w.root!.forEachNode(fn, 0);
-        }
-    }
-
-    visitWindowNodes(windowId: string, fn: (node: Node, level: number) => void) {
-        if (this.windows.has(windowId)) {
-            if (windowId === Model.MAIN_WINDOW_ID) {
-                this.borders.forEachNode(fn);
-            }
-            this.windows.get(windowId)!.visitNodes(fn);
-        }
+        this._root!.forEachNode(fn, 0);
     }
 
     /**
@@ -379,13 +285,12 @@ export class Model {
      * @param node The top node you want to begin searching from, deafults to the root node
      * @returns The first Tab Set
      */
-    getFirstTabSet(node = this.windows.get(Model.MAIN_WINDOW_ID)!.root as Node): TabSetNode {
+    getFirstTabSet(node = this._root as Node): TabSetNode {
         const child = node.getChildren()[0];
         if (child instanceof TabSetNode) {
             return child;
-        } else {
-            return this.getFirstTabSet(child);
         }
+        return this.getFirstTabSet(child);
     }
 
     /**
@@ -400,23 +305,8 @@ export class Model {
         if (json.borders) {
             model.borders = BorderSet.fromJson(json.borders, model);
         }
-        if (json.popouts) {
-            let i = 0;
-            const top = 100;
-            const left = 100;
-            for (const windowId in json.popouts) {
-                const windowJson = json.popouts[windowId];
-                const layoutWindow = LayoutWindow.fromJson(windowJson, model, windowId);
-                model.windows.set(windowId, layoutWindow);
-                // offscreen windows will reload cascaded (since cannot reposition)
-                if (!isOnScreen(layoutWindow.rect)) {
-                    layoutWindow.rect = new Rect(top + i * 50, left + i * 50, 600, 400);
-                    i++;
-                }
-            }
-        }
 
-        model.rootWindow.root = RowNode.fromJson(json.layout, model, model.getwindowsMap().get(Model.MAIN_WINDOW_ID)!);
+        model._root = RowNode.fromJson(json.layout, model);
         model.tidy(); // initial tidy of node tree
         return model;
     }
@@ -434,18 +324,10 @@ export class Model {
             node.fireEvent("save", {});
         });
 
-        const windows: Record<string, IJsonPopout> = {};
-        for (const [id, window] of this.windows) {
-            if (id !== Model.MAIN_WINDOW_ID) {
-                windows[id] = window.toJson();
-            }
-        }
-
         return {
             global,
             borders: this.borders.toJson(),
-            layout: this.rootWindow.root!.toJson(),
-            popouts: windows,
+            layout: this._root!.toJson(),
         };
     }
 
@@ -501,48 +383,13 @@ export class Model {
     /***********************internal ********************************/
 
     /** @internal */
-    removeEmptyWindows() {
-        const emptyWindows = new Set<string>();
-        for (const [windowId] of this.windows) {
-            if (windowId !== Model.MAIN_WINDOW_ID) {
-                let count = 0;
-                this.visitWindowNodes(windowId, (node) => {
-                    if (node instanceof TabNode) {
-                        count++;
-                    }
-                });
-                if (count === 0) {
-                    emptyWindows.add(windowId);
-                }
-            }
-        }
-
-        for (const windowId of emptyWindows) {
-            this.windows.delete(windowId);
-        }
-    }
-    /** @internal */
-    setActiveTabset(tabsetNode: TabSetNode | undefined, windowId: string) {
-        const window = this.windows.get(windowId);
-        if (window) {
-            if (tabsetNode) {
-                window.activeTabSet = tabsetNode;
-            } else {
-                window.activeTabSet = undefined;
-            }
-        }
+    setActiveTabset(tabsetNode: TabSetNode | undefined) {
+        this._activeTabSet = tabsetNode;
     }
 
     /** @internal */
-    setMaximizedTabset(tabsetNode: TabSetNode | undefined, windowId: string) {
-        const window = this.windows.get(windowId);
-        if (window) {
-            if (tabsetNode) {
-                window.maximizedTabSet = tabsetNode;
-            } else {
-                window.maximizedTabSet = undefined;
-            }
-        }
+    setMaximizedTabset(tabsetNode: TabSetNode | undefined) {
+        this._maximizedTabSet = tabsetNode;
     }
 
     /** @internal */
@@ -551,11 +398,7 @@ export class Model {
         this.idMap.clear();
         this.visitNodes((node) => {
             this.idMap.set(node.getId(), node);
-            // if (node instanceof RowNode) {
-            //     node.normalizeWeights();
-            // }
         });
-        // console.log(JSON.stringify(Object.keys(this._idMap)));
     }
 
     /** @internal */
@@ -569,9 +412,9 @@ export class Model {
     }
 
     /** @internal */
-    findDropTargetNode(windowId: string, dragNode: Node & IDraggable, x: number, y: number) {
-        let node = (this.windows.get(windowId)!.root as RowNode).findDropTargetNode(windowId, dragNode, x, y);
-        if (node === undefined && windowId === Model.MAIN_WINDOW_ID) {
+    findDropTargetNode(_windowId: string, dragNode: Node & IDraggable, x: number, y: number) {
+        let node = (this._root as RowNode).findDropTargetNode(_windowId, dragNode, x, y);
+        if (node === undefined) {
             node = this.borders.findDropTargetNode(dragNode, x, y);
         }
         return node;
@@ -579,11 +422,7 @@ export class Model {
 
     /** @internal */
     tidy() {
-        // console.log("before _tidy", this.toString());
-        for (const [_, window] of this.windows) {
-            window.root!.tidy();
-        }
-        // console.log("after _tidy", this.toString());
+        this._root!.tidy();
     }
 
     /** @internal */
@@ -648,9 +487,6 @@ export class Model {
         // tab
         attributeDefinitions.add("tabEnableClose", true).setType(Attribute.BOOLEAN);
         attributeDefinitions.add("tabCloseType", 1).setType("ICloseType");
-        attributeDefinitions.add("tabEnablePopout", false).setType(Attribute.BOOLEAN).setAlias("tabEnableFloat");
-        attributeDefinitions.add("tabEnablePopoutIcon", true).setType(Attribute.BOOLEAN);
-        attributeDefinitions.add("tabEnablePopoutOverlay", false).setType(Attribute.BOOLEAN);
         attributeDefinitions.add("tabEnableDrag", true).setType(Attribute.BOOLEAN);
         attributeDefinitions.add("tabEnableRename", true).setType(Attribute.BOOLEAN);
         attributeDefinitions.add("tabContentClassName", undefined).setType(Attribute.STRING);

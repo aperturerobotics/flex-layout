@@ -1,6 +1,5 @@
 import eslint from "@eslint/js";
 import tseslint from "typescript-eslint";
-import react from "eslint-plugin-react";
 import globals from "globals";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -9,10 +8,6 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 export default tseslint.config(eslint.configs.recommended, ...tseslint.configs.recommendedTypeChecked, {
-    plugins: {
-        react,
-    },
-
     languageOptions: {
         globals: {
             ...globals.browser,
@@ -20,12 +15,6 @@ export default tseslint.config(eslint.configs.recommended, ...tseslint.configs.r
         parserOptions: {
             projectService: true,
             tsconfigRootDir: __dirname,
-        },
-    },
-
-    settings: {
-        react: {
-            version: "detect",
         },
     },
 
@@ -40,7 +29,6 @@ export default tseslint.config(eslint.configs.recommended, ...tseslint.configs.r
                 varsIgnorePattern: "^_",
             },
         ],
-        "react/display-name": "warn",
         "@typescript-eslint/ban-ts-comment": "warn",
         "@typescript-eslint/no-empty-object-type": "warn",
         "@typescript-eslint/no-unsafe-assignment": "warn",

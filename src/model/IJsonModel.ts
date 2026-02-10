@@ -6,7 +6,6 @@ export interface IJsonModel {
     global?: IGlobalAttributes;
     borders?: IJsonBorderNode[];
     layout: IJsonRowNode; // top level 'row' is horizontal, rows inside rows take opposite orientation to parent row (ie can act as columns)
-    popouts?: Record<string, IJsonPopout>;
 }
 
 export interface IJsonRect {
@@ -14,11 +13,6 @@ export interface IJsonRect {
     y: number;
     width: number;
     height: number;
-}
-
-export interface IJsonPopout {
-    layout: IJsonRowNode;
-    rect: IJsonRect;
 }
 
 export interface IJsonBorderNode extends IBorderAttributes {
@@ -230,34 +224,6 @@ export interface IGlobalAttributes {
 	  Default: true
 	 */
     tabEnableDrag?: boolean;
-
-    /**
-	  Value for TabNode attribute enablePopout if not overridden
-
-	  enable popout (in popout capable browser)
-
-	  Default: false
-	 */
-    tabEnablePopout?: boolean;
-
-    /**
-	  Value for TabNode attribute enablePopoutIcon if not overridden
-
-	  whether to show the popout icon in the tabset header if this tab enables popouts
-
-	  Default: true
-	 */
-    tabEnablePopoutIcon?: boolean;
-
-    /**
-	  Value for TabNode attribute enablePopoutOverlay if not overridden
-
-	  if this tab will not work correctly in a popout window when the main window is backgrounded (inactive)
-            then enabling this option will gray out this tab
-
-	  Default: false
-	 */
-    tabEnablePopoutOverlay?: boolean;
 
     /**
 	  Value for TabNode attribute enableRename if not overridden
@@ -725,28 +691,6 @@ export interface ITabAttributes {
     enableDrag?: boolean;
 
     /**
-	  enable popout (in popout capable browser)
-
-	  Default: inherited from Global attribute tabEnablePopout (default false)
-	 */
-    enablePopout?: boolean;
-
-    /**
-	  whether to show the popout icon in the tabset header if this tab enables popouts
-
-	  Default: inherited from Global attribute tabEnablePopoutIcon (default true)
-	 */
-    enablePopoutIcon?: boolean;
-
-    /**
-	  if this tab will not work correctly in a popout window when the main window is backgrounded (inactive)
-            then enabling this option will gray out this tab
-
-	  Default: inherited from Global attribute tabEnablePopoutOverlay (default false)
-	 */
-    enablePopoutOverlay?: boolean;
-
-    /**
 	  allow user to rename tabs by double clicking
 
 	  Default: inherited from Global attribute tabEnableRename (default true)
@@ -759,13 +703,6 @@ export interface ITabAttributes {
 	  Default: inherited from Global attribute tabEnableRenderOnDemand (default true)
 	 */
     enableRenderOnDemand?: boolean;
-
-    /**
-	  if enabled the tab will re-mount when popped out/in
-
-	  Default: false
-	 */
-    enableWindowReMount?: boolean;
 
     /**
 	  An optional help text for the tab to be displayed upon tab hover.
