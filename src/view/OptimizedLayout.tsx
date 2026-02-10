@@ -322,8 +322,13 @@ export function OptimizedLayout({ model, renderTab, classNameMapper, onDragState
             for (const [nodeId, node] of modelTabNodes) {
                 const existing = prevTabs.get(nodeId);
                 if (existing) {
-                    // Preserve existing tab info (may have different node reference but same id)
+                    // Preserve existing tab info but update node reference.
+                    // Must detect node reference changes (from model replacement) so we
+                    // return the updated map instead of stale prevTabs.
                     nextTabs.set(nodeId, { ...existing, node });
+                    if (existing.node !== node) {
+                        changed = true;
+                    }
                 } else {
                     nextTabs.set(nodeId, createTabInfo(node));
                     changed = true;
