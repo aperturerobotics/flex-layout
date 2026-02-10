@@ -1,4 +1,4 @@
-import * as React from "react";
+import { memo, ReactNode } from "react";
 import { Rect } from "../Rect";
 
 export interface ISizeTrackerProps {
@@ -6,10 +6,10 @@ export interface ISizeTrackerProps {
     selected: boolean;
     forceRevision: number;
     tabsRevision: number;
-    children: React.ReactNode;
+    children: ReactNode;
 }
 // only render if size changed or forceRevision changed or tabsRevision changed
-export const SizeTracker = React.memo(
+export const SizeTracker = memo(
     ({ children }: ISizeTrackerProps) => {
         return <>{children}</>;
     },

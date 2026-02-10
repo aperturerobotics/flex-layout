@@ -1,4 +1,4 @@
-import * as React from "react";
+import { PointerEvent, useEffect, useRef, useState } from "react";
 import { Actions } from "../model/Actions";
 import { BorderNode } from "../model/BorderNode";
 import { RowNode } from "../model/RowNode";
@@ -20,16 +20,16 @@ export interface ISplitterProps {
 export const Splitter = (props: ISplitterProps) => {
     const { layout, node, index, horizontal } = props;
 
-    const [dragging, setDragging] = React.useState<boolean>(false);
-    const selfRef = React.useRef<HTMLDivElement | null>(null);
-    const extendedRef = React.useRef<HTMLDivElement | null>(null);
-    const pBounds = React.useRef<number[]>([]);
-    const outlineDiv = React.useRef<HTMLDivElement | undefined>(undefined);
-    const handleDiv = React.useRef<HTMLDivElement | undefined>(undefined);
-    const dragStartX = React.useRef<number>(0);
-    const dragStartY = React.useRef<number>(0);
-    const initalSizes = React.useRef<{ initialSizes: number[]; sum: number; startPosition: number }>({ initialSizes: [], sum: 0, startPosition: 0 });
-    // const throttleTimer = React.useRef<NodeJS.Timeout | undefined>(undefined);
+    const [dragging, setDragging] = useState<boolean>(false);
+    const selfRef = useRef<HTMLDivElement | null>(null);
+    const extendedRef = useRef<HTMLDivElement | null>(null);
+    const pBounds = useRef<number[]>([]);
+    const outlineDiv = useRef<HTMLDivElement | undefined>(undefined);
+    const handleDiv = useRef<HTMLDivElement | undefined>(undefined);
+    const dragStartX = useRef<number>(0);
+    const dragStartY = useRef<number>(0);
+    const initalSizes = useRef<{ initialSizes: number[]; sum: number; startPosition: number }>({ initialSizes: [], sum: 0, startPosition: 0 });
+    // const throttleTimer = useRef<NodeJS.Timeout | undefined>(undefined);
 
     const size = node.getModel().getSplitterSize();
     let extra = node.getModel().getSplitterExtra();
@@ -39,7 +39,7 @@ export const Splitter = (props: ISplitterProps) => {
         extra = Math.max(30, extra + size) - size;
     }
 
-    React.useEffect(() => {
+    useEffect(() => {
         // Android fix: must have passive touchstart handler to prevent default handling
         selfRef.current?.addEventListener("touchstart", onTouchStart, { passive: false });
         extendedRef.current?.addEventListener("touchstart", onTouchStart, { passive: false });
@@ -54,7 +54,7 @@ export const Splitter = (props: ISplitterProps) => {
         event.stopImmediatePropagation();
     };
 
-    const onPointerDown = (event: React.PointerEvent<HTMLElement>) => {
+    const onPointerDown = (event: PointerEvent<HTMLElement>) => {
         event.stopPropagation();
         if (node instanceof RowNode) {
             initalSizes.current = node.getSplitterInitials(index);

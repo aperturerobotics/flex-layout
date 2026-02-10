@@ -1,4 +1,4 @@
-import * as React from "react";
+import { MouseEvent as ReactMouseEvent, PointerEvent as ReactPointerEvent, ReactNode, TouchEvent as ReactTouchEvent } from "react";
 import { TabNode } from "../model/TabNode";
 import { LayoutInternal } from "./Layout";
 import { ICloseType } from "../model/ICloseType";
@@ -11,7 +11,7 @@ export function isDesktop() {
 /** @internal */
 export function getRenderStateEx(layout: LayoutInternal, node: TabNode, iconAngle?: number) {
     let leadingContent = undefined;
-    const titleContent: React.ReactNode = node.getName();
+    const titleContent: ReactNode = node.getName();
     const name = node.getName();
     if (iconAngle === undefined) {
         iconAngle = 0;
@@ -25,7 +25,7 @@ export function getRenderStateEx(layout: LayoutInternal, node: TabNode, iconAngl
         }
     }
 
-    const buttons: React.ReactNode[] = [];
+    const buttons: ReactNode[] = [];
 
     // allow customization of leading contents (icon) and contents
     const renderState = { leading: leadingContent, content: titleContent, name, buttons };
@@ -37,7 +37,7 @@ export function getRenderStateEx(layout: LayoutInternal, node: TabNode, iconAngl
 }
 
 /** @internal */
-export function isAuxMouseEvent(event: React.MouseEvent<HTMLElement, MouseEvent> | React.TouchEvent<HTMLElement>) {
+export function isAuxMouseEvent(event: ReactMouseEvent<HTMLElement> | ReactTouchEvent<HTMLElement>) {
     let auxEvent = false;
     if (event.nativeEvent instanceof MouseEvent) {
         if (event.nativeEvent.button !== 0 || event.ctrlKey || event.altKey || event.metaKey || event.shiftKey) {
@@ -59,7 +59,7 @@ export function getElementsByTagName(tag: string, currentDocument: Document): El
     return [...currentDocument.getElementsByTagName(tag)];
 }
 
-export function startDrag(doc: Document, event: React.PointerEvent<HTMLElement>, drag: (x: number, y: number) => void, dragEnd: () => void, dragCancel: () => void) {
+export function startDrag(doc: Document, event: ReactPointerEvent<HTMLElement>, drag: (x: number, y: number) => void, dragEnd: () => void, dragCancel: () => void) {
     event.preventDefault();
 
     const pointerMove = (ev: PointerEvent) => {

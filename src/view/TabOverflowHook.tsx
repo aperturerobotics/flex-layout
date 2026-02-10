@@ -1,4 +1,4 @@
-import * as React from "react";
+import { RefObject, useEffect, useLayoutEffect, useRef, useState, WheelEvent } from "react";
 import { TabNode } from "../model/TabNode";
 import { Rect } from "../Rect";
 import { TabSetNode } from "../model/TabSetNode";
@@ -9,33 +9,33 @@ import { Orientation } from "../Orientation";
 export const useTabOverflow = (
     node: TabSetNode | BorderNode,
     orientation: Orientation,
-    toolbarRef: React.MutableRefObject<HTMLElement | null>,
-    stickyButtonsRef: React.MutableRefObject<HTMLElement | null>,
+    toolbarRef: RefObject<HTMLElement | null>,
+    stickyButtonsRef: RefObject<HTMLElement | null>,
 ) => {
-    const firstRender = React.useRef<boolean>(true);
-    const tabsTruncated = React.useRef<boolean>(false);
-    const lastRect = React.useRef<Rect>(Rect.empty());
-    const selfRef = React.useRef<HTMLDivElement | null>(null);
+    const firstRender = useRef<boolean>(true);
+    const tabsTruncated = useRef<boolean>(false);
+    const lastRect = useRef<Rect>(Rect.empty());
+    const selfRef = useRef<HTMLDivElement | null>(null);
 
-    const [position, setPosition] = React.useState<number>(0);
-    const userControlledLeft = React.useRef<boolean>(false);
-    const [hiddenTabs, setHiddenTabs] = React.useState<{ node: TabNode; index: number }[]>([]);
-    const lastHiddenCount = React.useRef<number>(0);
+    const [position, setPosition] = useState<number>(0);
+    const userControlledLeft = useRef<boolean>(false);
+    const [hiddenTabs, setHiddenTabs] = useState<{ node: TabNode; index: number }[]>([]);
+    const lastHiddenCount = useRef<number>(0);
 
     // if selected node or tabset/border rectangle change then unset usercontrolled (so selected tab will be kept in view)
-    React.useLayoutEffect(() => {
+    useLayoutEffect(() => {
         userControlledLeft.current = false;
     }, [node.getSelectedNode(), node.getRect().width, node.getRect().height]);
 
     const nodeRect = node instanceof TabSetNode ? node.getRect() : node.getTabHeaderRect();
-    React.useLayoutEffect(() => {
+    useLayoutEffect(() => {
         if (nodeRect.width > 0 && nodeRect.height > 0) {
             updateVisibleTabs();
         }
     }, [nodeRect.width, nodeRect.height]);
 
     const instance = toolbarRef.current;
-    React.useEffect(() => {
+    useEffect(() => {
         if (!instance) {
             return;
         }
@@ -153,7 +153,7 @@ export const useTabOverflow = (
         }
     };
 
-    const onMouseWheel = (event: React.WheelEvent<HTMLElement>) => {
+    const onMouseWheel = (event: WheelEvent<HTMLElement>) => {
         let delta;
         if (Math.abs(event.deltaX) > Math.abs(event.deltaY)) {
             delta = -event.deltaX;

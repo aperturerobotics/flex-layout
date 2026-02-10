@@ -1,6 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import { render } from "vitest-browser-react";
-import * as React from "react";
 import { Layout, Model, IJsonModel, Actions } from "./index";
 import "@testing-library/jest-dom/vitest";
 

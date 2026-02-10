@@ -1,4 +1,4 @@
-import * as React from "react";
+import { DragEvent, KeyboardEvent, MouseEvent, PointerEvent, useLayoutEffect, useRef } from "react";
 import { I18nLabel } from "../I18nLabel";
 import { Actions } from "../model/Actions";
 import { TabNode } from "../model/TabNode";
@@ -19,10 +19,10 @@ export interface IBorderButtonProps {
 /** @internal */
 export const BorderButton = (props: IBorderButtonProps) => {
     const { layout, node, selected, border, icons, path } = props;
-    const selfRef = React.useRef<HTMLDivElement | null>(null);
-    const contentRef = React.useRef<HTMLInputElement | null>(null);
+    const selfRef = useRef<HTMLDivElement | null>(null);
+    const contentRef = useRef<HTMLInputElement | null>(null);
 
-    const onDragStart = (event: React.DragEvent<HTMLElement>) => {
+    const onDragStart = (event: DragEvent<HTMLElement>) => {
         if (node.isEnableDrag()) {
             event.stopPropagation();
             layout.setDragNode(event.nativeEvent, node);
@@ -31,18 +31,18 @@ export const BorderButton = (props: IBorderButtonProps) => {
         }
     };
 
-    const onDragEnd = (event: React.DragEvent<HTMLElement>) => {
+    const onDragEnd = (event: DragEvent<HTMLElement>) => {
         event.stopPropagation();
         layout.clearDragMain();
     };
 
-    const onAuxMouseClick = (event: React.MouseEvent<HTMLElement, MouseEvent>) => {
+    const onAuxMouseClick = (event: MouseEvent<HTMLElement>) => {
         if (isAuxMouseEvent(event)) {
             layout.auxMouseClick(node, event);
         }
     };
 
-    const onContextMenu = (event: React.MouseEvent<HTMLElement, MouseEvent>) => {
+    const onContextMenu = (event: MouseEvent<HTMLElement>) => {
         layout.showContextMenu(node, event);
     };
 
@@ -68,7 +68,7 @@ export const BorderButton = (props: IBorderButtonProps) => {
         }
     };
 
-    const onClose = (_event: React.MouseEvent<HTMLElement>) => {
+    const onClose = (_event: MouseEvent<HTMLElement>) => {
         if (isTabClosable(node, selected)) {
             layout.doAction(Actions.deleteTab(node.getId()));
         } else {
@@ -76,23 +76,23 @@ export const BorderButton = (props: IBorderButtonProps) => {
         }
     };
 
-    const onClosePointerDown = (event: React.PointerEvent<HTMLElement>) => {
+    const onClosePointerDown = (event: PointerEvent<HTMLElement>) => {
         event.stopPropagation();
     };
 
     // Measure and set tab rect after each render, and focus input if editing
-    React.useLayoutEffect(() => {
+    useLayoutEffect(() => {
         node.setTabRect(layout.getBoundingClientRect(selfRef.current!));
         if (layout.getEditingTab() === node) {
             contentRef.current!.select();
         }
     });
 
-    const onTextBoxPointerDown = (event: React.PointerEvent<HTMLInputElement>) => {
+    const onTextBoxPointerDown = (event: PointerEvent<HTMLInputElement>) => {
         event.stopPropagation();
     };
 
-    const onTextBoxKeyPress = (event: React.KeyboardEvent<HTMLInputElement>) => {
+    const onTextBoxKeyPress = (event: KeyboardEvent<HTMLInputElement>) => {
         if (event.code === "Escape") {
             // esc
             layout.setEditingTab(undefined);

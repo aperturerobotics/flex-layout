@@ -1,4 +1,4 @@
-import * as React from "react";
+import { useEffect, useLayoutEffect, useRef } from "react";
 import { TabNode } from "../model/TabNode";
 import { TabSetNode } from "../model/TabSetNode";
 import { CLASSES } from "../Types";
@@ -17,13 +17,13 @@ export interface ITabProps {
 /** @internal */
 export const Tab = (props: ITabProps) => {
     const { layout, selected, node, path } = props;
-    const selfRef = React.useRef<HTMLDivElement | null>(null);
-    const firstSelect = React.useRef<boolean>(true);
+    const selfRef = useRef<HTMLDivElement | null>(null);
+    const firstSelect = useRef<boolean>(true);
 
     const parentNode = node.getParent() as TabSetNode | BorderNode;
     const rect = parentNode.getContentRect();
 
-    React.useLayoutEffect(() => {
+    useLayoutEffect(() => {
         const element = node.getMoveableElement()!;
         selfRef.current!.appendChild(element);
         node.setMoveableElement(element);
@@ -47,7 +47,7 @@ export const Tab = (props: ITabProps) => {
         };
     }, []);
 
-    React.useEffect(() => {
+    useEffect(() => {
         if (node.isSelected()) {
             if (firstSelect.current) {
                 node.restoreScrollPosition();
@@ -56,11 +56,11 @@ export const Tab = (props: ITabProps) => {
         }
     }, [selected]);
 
-    React.useLayoutEffect(() => {
+    useLayoutEffect(() => {
         node.setRect(rect);
     }, [rect, node]);
 
-    React.useLayoutEffect(() => {
+    useLayoutEffect(() => {
         node.setVisible(selected);
     }, [selected, node]);
 

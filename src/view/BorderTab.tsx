@@ -1,4 +1,4 @@
-import * as React from "react";
+import { useLayoutEffect, useRef } from "react";
 import { Orientation } from "../Orientation";
 import { LayoutInternal } from "./Layout";
 import { BorderNode } from "../model/BorderNode";
@@ -16,10 +16,10 @@ export interface IBorderTabProps {
 
 export function BorderTab(props: IBorderTabProps) {
     const { layout, border, show } = props;
-    const selfRef = React.useRef<HTMLDivElement | null>(null);
-    const isFirstRender = React.useRef(true);
+    const selfRef = useRef<HTMLDivElement | null>(null);
+    const isFirstRender = useRef(true);
 
-    React.useLayoutEffect(() => {
+    useLayoutEffect(() => {
         const outerRect = layout.getBoundingClientRect(selfRef.current!);
         const contentRect = Rect.getContentRect(selfRef.current!).relativeTo(layout.getDomRect());
         if (outerRect.width > 0) {

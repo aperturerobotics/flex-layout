@@ -1,4 +1,4 @@
-import * as React from "react";
+import { Component, createRef, DragEvent as ReactDragEvent, MouseEvent as ReactMouseEvent, ReactNode, ReactPortal, RefObject } from "react";
 import { createPortal } from "react-dom";
 import { createRoot } from "react-dom/client";
 import { DockLocation } from "../DockLocation";
@@ -32,7 +32,7 @@ export interface ILayoutProps {
     /** the model for this layout */
     model: Model;
     /** factory function for creating the tab components */
-    factory: (node: TabNode) => React.ReactNode;
+    factory: (node: TabNode) => ReactNode;
     /** object mapping keys among close, maximize, restore, more to React nodes to use in place of the default icons, can alternatively return functions for creating the React nodes */
     icons?: IIcons;
     /** function called whenever the layout generates an action to update the model (allows for intercepting actions before they are dispatched to the model, for example, asking the user to confirm a tab close.) Returning undefined from the function will halt the action, otherwise return the action to continue */
@@ -50,11 +50,11 @@ export interface ILayoutProps {
     /** function called when model has changed */
     onModelChange?: (model: Model, action: Action) => void;
     /** function called when an external object (not a tab) gets dragged onto the layout, with a single dragenter argument. Should return either undefined to reject the drag/drop or an object with keys dragText, jsonDrop, to create a tab via drag (similar to a call to addTabToTabSet). Function onDropis passed the added tabNodeand thedrop DragEvent`, unless the drag was canceled. */
-    onExternalDrag?: (event: React.DragEvent<HTMLElement>) =>
+    onExternalDrag?: (event: ReactDragEvent<HTMLElement>) =>
         | undefined
         | {
               json: IJsonTabNode;
-              onDrop?: (node?: Node, event?: React.DragEvent<HTMLElement>) => void;
+              onDrop?: (node?: Node, event?: ReactDragEvent<HTMLElement>) => void;
           };
     /** function called with default css class name, return value is class name that will be used. Mainly for use with css modules. */
     classNameMapper?: (defaultClassName: string) => string;
@@ -79,16 +79,16 @@ export interface ILayoutProps {
 /**
  * A React component that hosts a multi-tabbed layout
  */
-export class Layout extends React.Component<ILayoutProps> {
+export class Layout extends Component<ILayoutProps> {
     /** @internal */
-    private selfRef: React.RefObject<LayoutInternal | null>;
+    private selfRef: RefObject<LayoutInternal | null>;
     /** @internal */
     private revision: number; // so LayoutInternal knows this is a parent render (used for optimization)
 
     /** @internal */
     constructor(props: ILayoutProps) {
         super(props);
-        this.selfRef = React.createRef<LayoutInternal>();
+        this.selfRef = createRef<LayoutInternal>();
         this.revision = 0;
     }
 
@@ -115,7 +115,7 @@ export class Layout extends React.Component<ILayoutProps> {
      * @param json the json for the new tab node
      * @param onDrop a callback to call when the drag is complete
      */
-    addTabWithDragAndDrop(event: DragEvent, json: IJsonTabNode, onDrop?: (node?: Node, event?: React.DragEvent<HTMLElement>) => void) {
+    addTabWithDragAndDrop(event: DragEvent, json: IJsonTabNode, onDrop?: (node?: Node, event?: ReactDragEvent<HTMLElement>) => void) {
         this.selfRef.current!.addTabWithDragAndDrop(event, json, onDrop);
     }
 
@@ -145,7 +145,7 @@ export class Layout extends React.Component<ILayoutProps> {
      * @param x the x position of the drag cursor on the image
      * @param y the x position of the drag cursor on the image
      */
-    setDragComponent(event: DragEvent, component: React.ReactNode, x: number, y: number) {
+    setDragComponent(event: DragEvent, component: ReactNode, x: number, y: number) {
         this.selfRef.current!.setDragComponent(event, component, x, y);
     }
 
@@ -169,7 +169,7 @@ interface ILayoutInternalProps extends ILayoutProps {
 interface ILayoutInternalState {
     rect: Rect;
     editingTab?: TabNode;
-    portal?: React.ReactPortal;
+    portal?: ReactPortal;
     showEdges: boolean;
     showOverlay: boolean;
     calculatedBorderBarSize: number;
@@ -179,13 +179,13 @@ interface ILayoutInternalState {
 }
 
 /** @internal */
-export class LayoutInternal extends React.Component<ILayoutInternalProps, ILayoutInternalState> {
+export class LayoutInternal extends Component<ILayoutInternalProps, ILayoutInternalState> {
     public static dragState: DragState | undefined = undefined;
 
-    private selfRef: React.RefObject<HTMLDivElement | null>;
-    private moveablesRef: React.RefObject<HTMLDivElement | null>;
-    private findBorderBarSizeRef: React.RefObject<HTMLDivElement | null>;
-    private mainRef: React.RefObject<HTMLDivElement | null>;
+    private selfRef: RefObject<HTMLDivElement | null>;
+    private moveablesRef: RefObject<HTMLDivElement | null>;
+    private findBorderBarSizeRef: RefObject<HTMLDivElement | null>;
+    private mainRef: RefObject<HTMLDivElement | null>;
     private previousModel?: Model;
     private orderedIds: string[];
     private moveableElementMap = new Map<string, HTMLElement>();
@@ -203,10 +203,10 @@ export class LayoutInternal extends React.Component<ILayoutInternalProps, ILayou
         super(props);
 
         this.orderedIds = [];
-        this.selfRef = React.createRef<HTMLDivElement>();
-        this.moveablesRef = React.createRef<HTMLDivElement>();
-        this.mainRef = React.createRef<HTMLDivElement>();
-        this.findBorderBarSizeRef = React.createRef<HTMLDivElement>();
+        this.selfRef = createRef<HTMLDivElement>();
+        this.moveablesRef = createRef<HTMLDivElement>();
+        this.mainRef = createRef<HTMLDivElement>();
+        this.findBorderBarSizeRef = createRef<HTMLDivElement>();
 
         this.icons = { ...defaultIcons, ...props.icons };
         // this.renderCount = 0;
@@ -321,7 +321,7 @@ export class LayoutInternal extends React.Component<ILayoutInternalProps, ILayou
         );
     }
 
-    renderBorders(inner: React.ReactNode) {
+    renderBorders(inner: ReactNode) {
         const classMain = this.getClassName(CLASSES.FLEXLAYOUT__LAYOUT_MAIN);
         const borders = this.props.model.getBorderSet().getBorderMap();
         if (borders.size > 0) {
@@ -330,8 +330,8 @@ export class LayoutInternal extends React.Component<ILayoutInternalProps, ILayou
                     {inner}
                 </div>
             );
-            const borderSetComponents = new Map<DockLocation, React.ReactNode>();
-            const borderSetContentComponents = new Map<DockLocation, React.ReactNode>();
+            const borderSetComponents = new Map<DockLocation, ReactNode>();
+            const borderSetContentComponents = new Map<DockLocation, ReactNode>();
             for (const [_, location] of DockLocation.values) {
                 const border = borders.get(location);
                 const showBorder = border && (!border.isAutoHide() || (border.isAutoHide() && (border.getChildren().length > 0 || this.state.showHiddenBorder === location)));
@@ -410,7 +410,7 @@ export class LayoutInternal extends React.Component<ILayoutInternalProps, ILayou
     }
 
     renderEdgeIndicators() {
-        const edges: React.ReactNode[] = [];
+        const edges: ReactNode[] = [];
         const arrowIcon = this.icons.edgeArrow;
         if (this.state.showEdges) {
             const r = this.props.model.getRoot().getRect();
@@ -461,7 +461,7 @@ export class LayoutInternal extends React.Component<ILayoutInternalProps, ILayou
     }
 
     renderTabMoveables() {
-        const tabMoveables: React.ReactNode[] = [];
+        const tabMoveables: ReactNode[] = [];
 
         this.props.model.visitNodes((node) => {
             if (node instanceof TabNode) {
@@ -495,7 +495,7 @@ export class LayoutInternal extends React.Component<ILayoutInternalProps, ILayou
     }
 
     renderTabStamps() {
-        const tabStamps: React.ReactNode[] = [];
+        const tabStamps: ReactNode[] = [];
 
         this.props.model.visitNodes((node) => {
             if (node instanceof TabNode) {
@@ -510,7 +510,7 @@ export class LayoutInternal extends React.Component<ILayoutInternalProps, ILayou
     }
 
     renderTabs() {
-        const tabs = new Map<string, React.ReactNode>();
+        const tabs = new Map<string, ReactNode>();
         this.props.model.visitNodes((node) => {
             if (node instanceof TabNode) {
                 const child = node;
@@ -591,7 +591,7 @@ export class LayoutInternal extends React.Component<ILayoutInternalProps, ILayou
         }
     }
 
-    reorderComponents(components: Map<string, React.ReactNode>, ids: string[]) {
+    reorderComponents(components: Map<string, ReactNode>, ids: string[]) {
         const nextIds: string[] = [];
         const nextIdsSet = new Set<string>();
 
@@ -750,7 +750,7 @@ export class LayoutInternal extends React.Component<ILayoutInternalProps, ILayou
         return undefined;
     }
 
-    showControlInPortal = (control: React.ReactNode, element: HTMLElement) => {
+    showControlInPortal = (control: ReactNode, element: HTMLElement) => {
         const portal = createPortal(control, element);
         this.setState({ portal });
     };
@@ -798,13 +798,13 @@ export class LayoutInternal extends React.Component<ILayoutInternalProps, ILayou
         return this.props.onTabSetPlaceHolder;
     }
 
-    showContextMenu(node: TabNode | TabSetNode | BorderNode, event: React.MouseEvent<HTMLElement, MouseEvent>) {
+    showContextMenu(node: TabNode | TabSetNode | BorderNode, event: ReactMouseEvent<HTMLElement>) {
         if (this.props.onContextMenu) {
             this.props.onContextMenu(node, event);
         }
     }
 
-    auxMouseClick(node: TabNode | TabSetNode | BorderNode, event: React.MouseEvent<HTMLElement, MouseEvent>) {
+    auxMouseClick(node: TabNode | TabSetNode | BorderNode, event: ReactMouseEvent<HTMLElement>) {
         if (this.props.onAuxMouseClick) {
             this.props.onAuxMouseClick(node, event);
         }
@@ -817,7 +817,7 @@ export class LayoutInternal extends React.Component<ILayoutInternalProps, ILayou
 
     // *************************** Start Drag Drop *************************************
 
-    addTabWithDragAndDrop(_event: DragEvent, json: IJsonTabNode, onDrop?: (node?: Node, event?: React.DragEvent<HTMLElement>) => void) {
+    addTabWithDragAndDrop(_event: DragEvent, json: IJsonTabNode, onDrop?: (node?: Node, event?: ReactDragEvent<HTMLElement>) => void) {
         const tempNode = TabNode.fromJson(json, this.props.model, false);
         LayoutInternal.dragState = new DragState(this, DragSource.Add, tempNode, json, onDrop);
     }
@@ -883,8 +883,8 @@ export class LayoutInternal extends React.Component<ILayoutInternalProps, ILayou
         }
     };
 
-    public setDragComponent(event: DragEvent, component: React.ReactNode, x: number, y: number) {
-        const dragElement: React.ReactNode = (
+    public setDragComponent(event: DragEvent, component: ReactNode, x: number, y: number) {
+        const dragElement: ReactNode = (
             <div style={{ position: "unset" }} className={this.getClassName(CLASSES.FLEXLAYOUT__LAYOUT) + " " + this.getClassName(CLASSES.FLEXLAYOUT__DRAG_RECT)}>
                 {component}
             </div>
@@ -904,14 +904,14 @@ export class LayoutInternal extends React.Component<ILayoutInternalProps, ILayou
         }, 0);
     }
 
-    onDragEnterRaw = (event: React.DragEvent<HTMLElement>) => {
+    onDragEnterRaw = (event: ReactDragEvent<HTMLElement>) => {
         this.dragEnterCount++;
         if (this.dragEnterCount === 1) {
             this.onDragEnter(event);
         }
     };
 
-    onDragLeaveRaw = (event: React.DragEvent<HTMLElement>) => {
+    onDragLeaveRaw = (event: ReactDragEvent<HTMLElement>) => {
         this.dragEnterCount--;
         if (this.dragEnterCount === 0) {
             // Check if we're leaving to an element still inside this layout or its
@@ -954,7 +954,7 @@ export class LayoutInternal extends React.Component<ILayoutInternalProps, ILayou
         }
     }
 
-    onDragEnter = (event: React.DragEvent<HTMLElement>) => {
+    onDragEnter = (event: ReactDragEvent<HTMLElement>) => {
         if (!LayoutInternal.dragState && this.props.onExternalDrag) {
             // not internal dragging
             const externalDrag = this.props.onExternalDrag(event);
@@ -995,7 +995,7 @@ export class LayoutInternal extends React.Component<ILayoutInternalProps, ILayou
         }
     };
 
-    onDragOver = (event: React.DragEvent<HTMLElement>) => {
+    onDragOver = (event: ReactDragEvent<HTMLElement>) => {
         if (this.dragging) {
             event.preventDefault();
             const clientRect = this.selfRef.current?.getBoundingClientRect();
@@ -1018,13 +1018,13 @@ export class LayoutInternal extends React.Component<ILayoutInternalProps, ILayou
         }
     };
 
-    onDragLeave = (_event: React.DragEvent<HTMLElement>) => {
+    onDragLeave = (_event: ReactDragEvent<HTMLElement>) => {
         if (this.dragging) {
             this.clearDragLocal();
         }
     };
 
-    onDrop = (event: React.DragEvent<HTMLElement>) => {
+    onDrop = (event: ReactDragEvent<HTMLElement>) => {
         if (this.dragging) {
             event.preventDefault();
 
@@ -1051,24 +1051,24 @@ export class LayoutInternal extends React.Component<ILayoutInternalProps, ILayou
 
 export const FlexLayoutVersion = "0.8.1";
 
-export type DragRectRenderCallback = (content: React.ReactNode | undefined, node?: Node, json?: IJsonTabNode) => React.ReactNode | undefined;
+export type DragRectRenderCallback = (content: ReactNode | undefined, node?: Node, json?: IJsonTabNode) => ReactNode | undefined;
 
-export type NodeMouseEvent = (node: TabNode | TabSetNode | BorderNode, event: React.MouseEvent<HTMLElement, MouseEvent>) => void;
+export type NodeMouseEvent = (node: TabNode | TabSetNode | BorderNode, event: ReactMouseEvent<HTMLElement>) => void;
 
 export type ShowOverflowMenuCallback = (
     node: TabSetNode | BorderNode,
-    mouseEvent: React.MouseEvent<HTMLElement, MouseEvent>,
+    mouseEvent: ReactMouseEvent<HTMLElement>,
     items: { index: number; node: TabNode }[],
     onSelect: (item: { index: number; node: TabNode }) => void,
 ) => void;
 
-export type TabSetPlaceHolderCallback = (node: TabSetNode) => React.ReactNode;
+export type TabSetPlaceHolderCallback = (node: TabSetNode) => ReactNode;
 
 export interface ITabSetRenderValues {
     /** components that will be added after the tabs */
-    stickyButtons: React.ReactNode[];
+    stickyButtons: ReactNode[];
     /** components that will be added at the end of the tabset */
-    buttons: React.ReactNode[];
+    buttons: ReactNode[];
     /** position to insert overflow button within [...stickyButtons, ...buttons]
      * if left undefined position will be after the sticky buttons (if any)
      */
@@ -1077,21 +1077,21 @@ export interface ITabSetRenderValues {
 
 export interface ITabRenderValues {
     /** the icon or other leading component */
-    leading: React.ReactNode;
+    leading: ReactNode;
     /** the main tab text/component */
-    content: React.ReactNode;
+    content: ReactNode;
     /** a set of react components to add to the tab after the content */
-    buttons: React.ReactNode[];
+    buttons: ReactNode[];
 }
 
 export interface IIcons {
-    close?: React.ReactNode | ((tabNode: TabNode) => React.ReactNode);
-    closeTabset?: React.ReactNode | ((tabSetNode: TabSetNode) => React.ReactNode);
-    maximize?: React.ReactNode | ((tabSetNode: TabSetNode) => React.ReactNode);
-    restore?: React.ReactNode | ((tabSetNode: TabSetNode) => React.ReactNode);
-    more?: React.ReactNode | ((tabSetNode: TabSetNode | BorderNode, hiddenTabs: { node: TabNode; index: number }[]) => React.ReactNode);
-    edgeArrow?: React.ReactNode;
-    activeTabset?: React.ReactNode | ((tabSetNode: TabSetNode) => React.ReactNode);
+    close?: ReactNode | ((tabNode: TabNode) => ReactNode);
+    closeTabset?: ReactNode | ((tabSetNode: TabSetNode) => ReactNode);
+    maximize?: ReactNode | ((tabSetNode: TabSetNode) => ReactNode);
+    restore?: ReactNode | ((tabSetNode: TabSetNode) => ReactNode);
+    more?: ReactNode | ((tabSetNode: TabSetNode | BorderNode, hiddenTabs: { node: TabNode; index: number }[]) => ReactNode);
+    edgeArrow?: ReactNode;
+    activeTabset?: ReactNode | ((tabSetNode: TabSetNode) => ReactNode);
 }
 
 const defaultIcons = {
@@ -1121,14 +1121,14 @@ class DragState {
     public readonly dragSource: DragSource;
     public readonly dragNode: (Node & IDraggable) | undefined;
     public readonly dragJson: IJsonTabNode | undefined;
-    public readonly fnNewNodeDropped: ((node?: Node, event?: React.DragEvent<HTMLElement>) => void) | undefined;
+    public readonly fnNewNodeDropped: ((node?: Node, event?: ReactDragEvent<HTMLElement>) => void) | undefined;
 
     public constructor(
         mainLayout: LayoutInternal,
         dragSource: DragSource,
         dragNode: (Node & IDraggable) | undefined,
         dragJson: IJsonTabNode | undefined,
-        fnNewNodeDropped: ((node?: Node, event?: React.DragEvent<HTMLElement>) => void) | undefined,
+        fnNewNodeDropped: ((node?: Node, event?: ReactDragEvent<HTMLElement>) => void) | undefined,
     ) {
         this.mainLayout = mainLayout;
         this.dragSource = dragSource;

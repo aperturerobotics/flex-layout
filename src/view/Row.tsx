@@ -1,4 +1,4 @@
-import * as React from "react";
+import { ReactNode, useLayoutEffect, useRef } from "react";
 import { RowNode } from "../model/RowNode";
 import { TabSetNode } from "../model/TabSetNode";
 import { CLASSES } from "../Types";
@@ -16,16 +16,16 @@ export interface IRowProps {
 /** @internal */
 export const Row = (props: IRowProps) => {
     const { layout, node } = props;
-    const selfRef = React.useRef<HTMLDivElement | null>(null);
+    const selfRef = useRef<HTMLDivElement | null>(null);
 
     const horizontal = node.getOrientation() === Orientation.HORZ;
 
     // Measure and set row rect after each render
-    React.useLayoutEffect(() => {
+    useLayoutEffect(() => {
         node.setRect(layout.getBoundingClientRect(selfRef.current!));
     });
 
-    const items: React.ReactNode[] = [];
+    const items: ReactNode[] = [];
 
     let i = 0;
 

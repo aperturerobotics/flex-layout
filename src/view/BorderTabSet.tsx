@@ -1,4 +1,4 @@
-import * as React from "react";
+import { MouseEvent, PointerEvent, ReactNode, useLayoutEffect, useRef } from "react";
 import { DockLocation } from "../DockLocation";
 import { BorderNode } from "../model/BorderNode";
 import { TabNode } from "../model/TabNode";
@@ -24,34 +24,34 @@ export interface IBorderTabSetProps {
 export const BorderTabSet = (props: IBorderTabSetProps) => {
     const { border, layout, size } = props;
 
-    const toolbarRef = React.useRef<HTMLDivElement | null>(null);
-    const overflowbuttonRef = React.useRef<HTMLButtonElement | null>(null);
-    const stickyButtonsRef = React.useRef<HTMLDivElement | null>(null);
+    const toolbarRef = useRef<HTMLDivElement | null>(null);
+    const overflowbuttonRef = useRef<HTMLButtonElement | null>(null);
+    const stickyButtonsRef = useRef<HTMLDivElement | null>(null);
 
     const icons = layout.getIcons();
 
     // Measure and set the tab header rect after each render
-    React.useLayoutEffect(() => {
+    useLayoutEffect(() => {
         border.setTabHeaderRect(Rect.getBoundingClientRect(selfRef.current!).relativeTo(layout.getDomRect()));
     });
 
     const { selfRef, position, userControlledLeft, hiddenTabs, onMouseWheel, tabsTruncated } = useTabOverflow(border, Orientation.flip(border.getOrientation()), toolbarRef, stickyButtonsRef);
 
-    const onAuxMouseClick = (event: React.MouseEvent<HTMLElement, MouseEvent>) => {
+    const onAuxMouseClick = (event: MouseEvent<HTMLElement>) => {
         if (isAuxMouseEvent(event)) {
             layout.auxMouseClick(border, event);
         }
     };
 
-    const onContextMenu = (event: React.MouseEvent<HTMLElement, MouseEvent>) => {
+    const onContextMenu = (event: MouseEvent<HTMLElement>) => {
         layout.showContextMenu(border, event);
     };
 
-    const onInterceptPointerDown = (event: React.PointerEvent) => {
+    const onInterceptPointerDown = (event: PointerEvent) => {
         event.stopPropagation();
     };
 
-    const onOverflowClick = (event: React.MouseEvent<HTMLElement, MouseEvent>) => {
+    const onOverflowClick = (event: MouseEvent<HTMLElement>) => {
         const callback = layout.getShowOverflowMenu();
         if (callback !== undefined) {
             callback(border, event, hiddenTabs, onOverflowItemSelect);
@@ -69,7 +69,7 @@ export const BorderTabSet = (props: IBorderTabSetProps) => {
 
     const cm = layout.getClassName;
 
-    const tabButtons: React.ReactNode[] = [];
+    const tabButtons: ReactNode[] = [];
 
     const layoutTab = (i: number) => {
         const isSelected = border.getSelected() === i;
@@ -93,8 +93,8 @@ export const BorderTabSet = (props: IBorderTabSetProps) => {
     }
 
     // allow customization of tabset right/bottom buttons
-    let buttons: React.ReactNode[] = [];
-    const stickyButtons: React.ReactNode[] = [];
+    let buttons: ReactNode[] = [];
+    const stickyButtons: ReactNode[] = [];
     const renderState: ITabSetRenderValues = { buttons, stickyButtons: stickyButtons, overflowPosition: undefined };
     layout.customizeTabSet(border, renderState);
     buttons = renderState.buttons;

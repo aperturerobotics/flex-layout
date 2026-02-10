@@ -1,4 +1,4 @@
-import * as React from "react";
+import { DragEvent, MouseEvent, PointerEvent, ReactNode, useEffect, useRef } from "react";
 import { I18nLabel } from "../I18nLabel";
 import { Actions } from "../model/Actions";
 import { TabNode } from "../model/TabNode";
@@ -23,21 +23,21 @@ export interface ITabSetProps {
 export const TabSet = (props: ITabSetProps) => {
     const { node, layout } = props;
 
-    const tabStripRef = React.useRef<HTMLDivElement | null>(null);
-    const tabStripInnerRef = React.useRef<HTMLDivElement | null>(null);
-    const contentRef = React.useRef<HTMLDivElement | null>(null);
-    const buttonBarRef = React.useRef<HTMLDivElement | null>(null);
-    const overflowbuttonRef = React.useRef<HTMLButtonElement | null>(null);
-    const stickyButtonsRef = React.useRef<HTMLDivElement | null>(null);
+    const tabStripRef = useRef<HTMLDivElement | null>(null);
+    const tabStripInnerRef = useRef<HTMLDivElement | null>(null);
+    const contentRef = useRef<HTMLDivElement | null>(null);
+    const buttonBarRef = useRef<HTMLDivElement | null>(null);
+    const overflowbuttonRef = useRef<HTMLButtonElement | null>(null);
+    const stickyButtonsRef = useRef<HTMLDivElement | null>(null);
 
     const icons = layout.getIcons();
 
     // Track if this is the first render to avoid redraw loops
-    const isFirstRender = React.useRef(true);
+    const isFirstRender = useRef(true);
 
     // Measure DOM elements and update node rects
     // Use useEffect (rather than useLayoutEffect) otherwise contentrect not set correctly (has height 0 when changing theme in demo)
-    React.useEffect(() => {
+    useEffect(() => {
         node.setRect(layout.getBoundingClientRect(selfRef.current!));
 
         if (tabStripRef.current) {
@@ -63,7 +63,7 @@ export const TabSet = (props: ITabSetProps) => {
     // this must be after the useEffect, so the node rect is already set
     const { selfRef, position, userControlledLeft, hiddenTabs, onMouseWheel, tabsTruncated } = useTabOverflow(node, Orientation.HORZ, buttonBarRef, stickyButtonsRef);
 
-    const onOverflowClick = (event: React.MouseEvent<HTMLElement, MouseEvent>) => {
+    const onOverflowClick = (event: MouseEvent<HTMLElement>) => {
         const callback = layout.getShowOverflowMenu();
         if (callback !== undefined) {
             callback(node, event, hiddenTabs, onOverflowItemSelect);
@@ -79,7 +79,7 @@ export const TabSet = (props: ITabSetProps) => {
         userControlledLeft.current = false;
     };
 
-    const onDragStart = (event: React.DragEvent<HTMLElement>) => {
+    const onDragStart = (event: DragEvent<HTMLElement>) => {
         if (!layout.getEditingTab()) {
             if (node.isEnableDrag()) {
                 event.stopPropagation();
@@ -92,44 +92,44 @@ export const TabSet = (props: ITabSetProps) => {
         }
     };
 
-    const onPointerDown = (event: React.PointerEvent<HTMLElement>) => {
+    const onPointerDown = (event: PointerEvent<HTMLElement>) => {
         if (!isAuxMouseEvent(event)) {
             layout.doAction(Actions.setActiveTabset(node.getId(), layout.getWindowId()));
         }
     };
 
-    const onAuxMouseClick = (event: React.MouseEvent<HTMLElement, MouseEvent>) => {
+    const onAuxMouseClick = (event: MouseEvent<HTMLElement>) => {
         if (isAuxMouseEvent(event)) {
             layout.auxMouseClick(node, event);
         }
     };
 
-    const onContextMenu = (event: React.MouseEvent<HTMLElement, MouseEvent>) => {
+    const onContextMenu = (event: MouseEvent<HTMLElement>) => {
         layout.showContextMenu(node, event);
     };
 
-    const onInterceptPointerDown = (event: React.PointerEvent) => {
+    const onInterceptPointerDown = (event: PointerEvent) => {
         event.stopPropagation();
     };
 
-    const onMaximizeToggle = (event: React.MouseEvent<HTMLElement, MouseEvent>) => {
+    const onMaximizeToggle = (event: MouseEvent<HTMLElement>) => {
         if (node.canMaximize()) {
             layout.maximize(node);
         }
         event.stopPropagation();
     };
 
-    const onClose = (event: React.MouseEvent<HTMLElement, MouseEvent>) => {
+    const onClose = (event: MouseEvent<HTMLElement>) => {
         layout.doAction(Actions.deleteTabset(node.getId()));
         event.stopPropagation();
     };
 
-    const onCloseTab = (event: React.MouseEvent<HTMLElement, MouseEvent>) => {
+    const onCloseTab = (event: MouseEvent<HTMLElement>) => {
         layout.doAction(Actions.deleteTab(node.getChildren()[0].getId()));
         event.stopPropagation();
     };
 
-    const onDoubleClick = (_event: React.MouseEvent<HTMLElement, MouseEvent>) => {
+    const onDoubleClick = (_event: MouseEvent<HTMLElement>) => {
         if (node.canMaximize()) {
             layout.maximize(node);
         }
@@ -158,8 +158,8 @@ export const TabSet = (props: ITabSetProps) => {
         }
     }
 
-    let stickyButtons: React.ReactNode[] = [];
-    let buttons: React.ReactNode[] = [];
+    let stickyButtons: ReactNode[] = [];
+    let buttons: ReactNode[] = [];
 
     // allow customization of header contents and buttons
     const renderState: ITabSetRenderValues = { stickyButtons, buttons, overflowPosition: undefined };
@@ -363,7 +363,7 @@ export const TabSet = (props: ITabSetProps) => {
         }
     }
 
-    let emptyTabset: React.ReactNode;
+    let emptyTabset: ReactNode;
     if (node.getChildren().length === 0) {
         const placeHolderCallback = layout.getTabSetPlaceHolderCallback();
         if (placeHolderCallback) {

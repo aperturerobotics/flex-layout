@@ -1,4 +1,4 @@
-import * as React from "react";
+import { useEffect, useRef } from "react";
 import { TabNode } from "../model/TabNode";
 import { LayoutInternal } from "./Layout";
 import { CLASSES } from "../Types";
@@ -13,9 +13,9 @@ export interface IDragContainerProps {
 /** @internal */
 export const DragContainer = (props: IDragContainerProps) => {
     const { layout, node } = props;
-    const selfRef = React.useRef<HTMLDivElement | null>(null);
+    const selfRef = useRef<HTMLDivElement | null>(null);
 
-    React.useEffect(() => {
+    useEffect(() => {
         node.setTabStamp(selfRef.current);
     }, [node, selfRef.current]);
 

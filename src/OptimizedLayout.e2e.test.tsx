@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import { render } from "vitest-browser-react";
-import * as React from "react";
+import { useEffect } from "react";
 import { OptimizedLayout } from "./view/OptimizedLayout";
 import { Model, IJsonModel, Actions, DockLocation, TabNode, TabSetNode } from "./index";
 import "@testing-library/jest-dom/vitest";
@@ -166,7 +166,7 @@ describe("OptimizedLayout", () => {
         let unmountCount = 0;
 
         function TrackedTab({ name }: { name: string }) {
-            React.useEffect(() => {
+            useEffect(() => {
                 mountCount++;
                 return () => {
                     unmountCount++;
@@ -877,7 +877,7 @@ describe("OptimizedLayout", () => {
         let unmountCount = 0;
 
         function TrackedContent({ name }: { name: string }) {
-            React.useEffect(() => {
+            useEffect(() => {
                 return () => {
                     unmountCount++;
                 };
@@ -1425,7 +1425,7 @@ describe("OptimizedLayout", () => {
         let unmountCount = 0;
 
         function TrackedContent({ name }: { name: string }) {
-            React.useEffect(() => {
+            useEffect(() => {
                 mountCount++;
                 return () => {
                     unmountCount++;

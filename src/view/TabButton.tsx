@@ -1,4 +1,4 @@
-import * as React from "react";
+import { DragEvent, KeyboardEvent, MouseEvent, PointerEvent, useLayoutEffect, useRef } from "react";
 import { I18nLabel } from "../I18nLabel";
 import { Actions } from "../model/Actions";
 import { TabNode } from "../model/TabNode";
@@ -18,19 +18,19 @@ export interface ITabButtonProps {
 /** @internal */
 export const TabButton = (props: ITabButtonProps) => {
     const { layout, node, selected, path } = props;
-    const selfRef = React.useRef<HTMLDivElement | null>(null);
-    const contentRef = React.useRef<HTMLInputElement | null>(null);
+    const selfRef = useRef<HTMLDivElement | null>(null);
+    const contentRef = useRef<HTMLInputElement | null>(null);
     const icons = layout.getIcons();
 
     // Measure and set tab rect after each render, and focus input if editing
-    React.useLayoutEffect(() => {
+    useLayoutEffect(() => {
         node.setTabRect(layout.getBoundingClientRect(selfRef.current!));
         if (layout.getEditingTab() === node) {
             contentRef.current!.select();
         }
     });
 
-    const onDragStart = (event: React.DragEvent<HTMLElement>) => {
+    const onDragStart = (event: DragEvent<HTMLElement>) => {
         if (node.isEnableDrag()) {
             event.stopPropagation(); // prevent starting a tabset drag as well
             layout.setDragNode(event.nativeEvent, node);
@@ -39,17 +39,17 @@ export const TabButton = (props: ITabButtonProps) => {
         }
     };
 
-    const onDragEnd = (_event: React.DragEvent<HTMLElement>) => {
+    const onDragEnd = (_event: DragEvent<HTMLElement>) => {
         layout.clearDragMain();
     };
 
-    const onAuxMouseClick = (event: React.MouseEvent<HTMLElement, MouseEvent>) => {
+    const onAuxMouseClick = (event: MouseEvent<HTMLElement>) => {
         if (isAuxMouseEvent(event)) {
             layout.auxMouseClick(node, event);
         }
     };
 
-    const onContextMenu = (event: React.MouseEvent<HTMLElement, MouseEvent>) => {
+    const onContextMenu = (event: MouseEvent<HTMLElement>) => {
         layout.showContextMenu(node, event);
     };
 
@@ -57,7 +57,7 @@ export const TabButton = (props: ITabButtonProps) => {
         layout.doAction(Actions.selectTab(node.getId()));
     };
 
-    const onDoubleClick = (event: React.MouseEvent<HTMLElement>) => {
+    const onDoubleClick = (event: MouseEvent<HTMLElement>) => {
         if (node.isEnableRename()) {
             onRename();
             event.stopPropagation();
@@ -76,7 +76,7 @@ export const TabButton = (props: ITabButtonProps) => {
         }
     };
 
-    const onClose = (event: React.MouseEvent<HTMLButtonElement>) => {
+    const onClose = (event: MouseEvent<HTMLButtonElement>) => {
         event.preventDefault();
         if (isTabClosable(node, selected)) {
             layout.doAction(Actions.deleteTab(node.getId()));
@@ -85,19 +85,19 @@ export const TabButton = (props: ITabButtonProps) => {
         }
     };
 
-    const onClosePointerDown = (event: React.PointerEvent<HTMLElement>) => {
+    const onClosePointerDown = (event: PointerEvent<HTMLElement>) => {
         event.stopPropagation();
     };
 
-    const onCloseKeyDown = (event: React.KeyboardEvent<HTMLButtonElement>) => {
+    const onCloseKeyDown = (event: KeyboardEvent<HTMLButtonElement>) => {
         event.stopPropagation();
     };
 
-    const onTextBoxPointerDown = (event: React.PointerEvent<HTMLInputElement>) => {
+    const onTextBoxPointerDown = (event: PointerEvent<HTMLInputElement>) => {
         event.stopPropagation();
     };
 
-    const onTextBoxKeyPress = (event: React.KeyboardEvent<HTMLInputElement>) => {
+    const onTextBoxKeyPress = (event: KeyboardEvent<HTMLInputElement>) => {
         if (event.code === "Escape") {
             // esc
             layout.setEditingTab(undefined);
@@ -166,7 +166,7 @@ export const TabButton = (props: ITabButtonProps) => {
         );
     }
 
-    const onKeyDown = (event: React.KeyboardEvent<HTMLDivElement>) => {
+    const onKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
         if (event.key === "Enter" || event.key === " ") {
             event.preventDefault();
             onClick();

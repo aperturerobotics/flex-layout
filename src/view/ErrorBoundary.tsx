@@ -1,11 +1,10 @@
-import * as React from "react";
-import { ErrorInfo } from "react";
+import { Component, ErrorInfo, ReactNode } from "react";
 import { CLASSES } from "../Types";
 
 /** @internal */
 export interface IErrorBoundaryProps {
     message: string;
-    children: React.ReactNode;
+    children: ReactNode;
 }
 /** @internal */
 export interface IErrorBoundaryState {
@@ -13,7 +12,7 @@ export interface IErrorBoundaryState {
 }
 
 /** @internal */
-export class ErrorBoundary extends React.Component<IErrorBoundaryProps, IErrorBoundaryState> {
+export class ErrorBoundary extends Component<IErrorBoundaryProps, IErrorBoundaryState> {
     constructor(props: IErrorBoundaryProps) {
         super(props);
         this.state = { hasError: false };

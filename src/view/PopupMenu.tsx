@@ -1,4 +1,4 @@
-import * as React from "react";
+import { DragEvent, MouseEvent } from "react";
 import { TabNode } from "../model/TabNode";
 import { CLASSES } from "../Types";
 import { LayoutInternal } from "./Layout";
@@ -70,13 +70,13 @@ interface IPopupMenuProps {
 const PopupMenu = (props: IPopupMenuProps) => {
     const { items, onHide, onSelect, classNameMapper, layout } = props;
 
-    const onItemClick = (item: { index: number; node: TabNode }, event: React.MouseEvent<HTMLElement, MouseEvent>) => {
+    const onItemClick = (item: { index: number; node: TabNode }, event: MouseEvent<HTMLElement>) => {
         onSelect(item);
         onHide();
         event.stopPropagation();
     };
 
-    const onDragStart = (event: React.DragEvent<HTMLElement>, node: TabNode) => {
+    const onDragStart = (event: DragEvent<HTMLElement>, node: TabNode) => {
         event.stopPropagation(); // prevent starting a tabset drag as well
         layout.setDragNode(event.nativeEvent, node);
         setTimeout(() => {
@@ -84,7 +84,7 @@ const PopupMenu = (props: IPopupMenuProps) => {
         }, 0);
     };
 
-    const onDragEnd = (_event: React.DragEvent<HTMLElement>) => {
+    const onDragEnd = (_event: DragEvent<HTMLElement>) => {
         layout.clearDragMain();
     };
 

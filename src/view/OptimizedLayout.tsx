@@ -1,5 +1,4 @@
-import * as React from "react";
-import { memo, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { CSSProperties, memo, ReactNode, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { Rect } from "../Rect";
 import { Action } from "../model/Action";
 import { Actions } from "../model/Actions";
@@ -15,7 +14,7 @@ import { ILayoutProps, Layout } from "./Layout";
  */
 export interface IOptimizedLayoutProps extends Omit<ILayoutProps, "factory"> {
     /** Function to render tab content - receives TabNode, returns React element */
-    renderTab: (node: TabNode) => React.ReactNode;
+    renderTab: (node: TabNode) => ReactNode;
 }
 
 /**
@@ -132,7 +131,7 @@ const TabPanel = memo(function TabPanel({
     isDragging: boolean;
     contentClassName: string | undefined;
     className: string;
-    renderTab: (node: TabNode) => React.ReactNode;
+    renderTab: (node: TabNode) => ReactNode;
     model: Model;
     isMaximized: boolean;
     hasMaximizedTabset: boolean;
@@ -235,7 +234,7 @@ function TabContainer({
     maximizedTabsetId,
 }: {
     tabs: Map<string, TabInfo>;
-    renderTab: (node: TabNode) => React.ReactNode;
+    renderTab: (node: TabNode) => ReactNode;
     isDragging: boolean;
     classNameMapper?: (defaultClassName: string) => string;
     model: Model;
@@ -251,7 +250,7 @@ function TabContainer({
 
     // When a tabset is maximized, the tab container needs a higher z-index
     // to appear above the maximized tabset's portal (which renders the tabbar)
-    const containerStyle: React.CSSProperties = hasMaximizedTabset ? { zIndex: 10 } : {};
+    const containerStyle: CSSProperties = hasMaximizedTabset ? { zIndex: 10 } : {};
 
     return (
         <div className="flexlayout__optimized_layout_tab_container" data-layout-path="/tab-container" style={containerStyle}>
