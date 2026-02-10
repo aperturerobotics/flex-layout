@@ -50,24 +50,6 @@ export const BorderButton = (props: IBorderButtonProps) => {
         layout.doAction(Actions.selectTab(node.getId()));
     };
 
-    // const onDoubleClick = (event: Event) => {
-    //     // if (node.isEnableRename()) {
-    //     //     onRename();
-    //     // }
-    // };
-
-    // const onRename = () => {
-    //     layout.setEditingTab(node);
-    //     layout.getCurrentDocument()!.body.addEventListener("pointerdown", onEndEdit);
-    // };
-
-    const _onEndEdit = (event: Event) => {
-        if (event.target !== contentRef.current!) {
-            layout.getCurrentDocument()!.body.removeEventListener("pointerdown", _onEndEdit);
-            layout.setEditingTab(undefined);
-        }
-    };
-
     const onClose = (_event: MouseEvent<HTMLElement>) => {
         if (isTabClosable(node, selected)) {
             layout.doAction(Actions.deleteTab(node.getId()));

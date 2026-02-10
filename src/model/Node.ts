@@ -114,7 +114,6 @@ export abstract class Node {
 
     /** @internal */
     fireEvent(event: string, params: NodeEventParams) {
-        // console.log(this._type, " fireEvent " + event + " " + JSON.stringify(params));
         if (this.listeners.has(event)) {
             this.listeners.get(event)!(params);
         }
@@ -122,17 +121,15 @@ export abstract class Node {
 
     /** @internal */
     getAttr(name: string) {
-        let val = this.attributes[name];
-
-        if (val === undefined) {
-            const modelName = this.getAttributeDefinitions().getModelName(name);
-            if (modelName !== undefined) {
-                val = this.model.getAttribute(modelName);
-            }
+        const val = this.attributes[name];
+        if (val !== undefined) {
+            return val;
         }
-
-        // console.log(name + "=" + val);
-        return val;
+        const modelName = this.getAttributeDefinitions().getModelName(name);
+        if (modelName !== undefined) {
+            return this.model.getAttribute(modelName);
+        }
+        return undefined;
     }
 
     /** @internal */

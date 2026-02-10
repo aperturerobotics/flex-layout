@@ -3,11 +3,7 @@ export class Orientation {
     static VERT = new Orientation("vert");
 
     static flip(from: Orientation) {
-        if (from === Orientation.HORZ) {
-            return Orientation.VERT;
-        } else {
-            return Orientation.HORZ;
-        }
+        return from === Orientation.HORZ ? Orientation.VERT : Orientation.HORZ;
     }
 
     /** @internal */

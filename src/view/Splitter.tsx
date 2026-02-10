@@ -29,7 +29,6 @@ export const Splitter = (props: ISplitterProps) => {
     const dragStartX = useRef<number>(0);
     const dragStartY = useRef<number>(0);
     const initalSizes = useRef<{ initialSizes: number[]; sum: number; startPosition: number }>({ initialSizes: [], sum: 0, startPosition: 0 });
-    // const throttleTimer = useRef<NodeJS.Timeout | undefined>(undefined);
 
     const size = node.getModel().getSplitterSize();
     let extra = node.getModel().getSplitterExtra();
@@ -138,12 +137,7 @@ export const Splitter = (props: ISplitterProps) => {
         void _realtime;
         const redraw = () => {
             if (outlineDiv.current) {
-                let value;
-                if (node.getOrientation() === Orientation.VERT) {
-                    value = outlineDiv.current.offsetTop;
-                } else {
-                    value = outlineDiv.current.offsetLeft;
-                }
+                const value = node.getOrientation() === Orientation.VERT ? outlineDiv.current.offsetTop : outlineDiv.current.offsetLeft;
 
                 if (node instanceof BorderNode) {
                     const pos = node.calculateSplit(node, value);
@@ -161,15 +155,7 @@ export const Splitter = (props: ISplitterProps) => {
 
     const getBoundPosition = (p: number) => {
         const bounds = pBounds.current;
-        let rtn = p;
-        if (p < bounds[0]) {
-            rtn = bounds[0];
-        }
-        if (p > bounds[1]) {
-            rtn = bounds[1];
-        }
-
-        return rtn;
+        return Math.min(Math.max(p, bounds[0]), bounds[1]);
     };
 
     const cm = layout.getClassName;
@@ -206,26 +192,25 @@ export const Splitter = (props: ISplitterProps) => {
                 {handle}
             </div>
         );
-    } else {
-        // add extended transparent div for hit testing
-
-        const style2: Record<string, string | number> = {};
-        if (node.getOrientation() === Orientation.HORZ) {
-            style2.height = "100%";
-            style2.width = size + extra + "px";
-            style2.cursor = "ew-resize";
-        } else {
-            style2.height = size + extra + "px";
-            style2.width = "100%";
-            style2.cursor = "ns-resize";
-        }
-
-        const className2 = cm(CLASSES.FLEXLAYOUT__SPLITTER_EXTRA);
-
-        return (
-            <div className={className} style={style} ref={selfRef} data-layout-path={node.getPath() + "/s" + (index - 1)} onPointerDown={onPointerDown}>
-                <div style={style2} ref={extendedRef} className={className2} onPointerDown={onPointerDown}></div>
-            </div>
-        );
     }
+
+    // add extended transparent div for hit testing
+    const style2: Record<string, string | number> = {};
+    if (node.getOrientation() === Orientation.HORZ) {
+        style2.height = "100%";
+        style2.width = size + extra + "px";
+        style2.cursor = "ew-resize";
+    } else {
+        style2.height = size + extra + "px";
+        style2.width = "100%";
+        style2.cursor = "ns-resize";
+    }
+
+    const className2 = cm(CLASSES.FLEXLAYOUT__SPLITTER_EXTRA);
+
+    return (
+        <div className={className} style={style} ref={selfRef} data-layout-path={node.getPath() + "/s" + (index - 1)} onPointerDown={onPointerDown}>
+            <div style={style2} ref={extendedRef} className={className2} onPointerDown={onPointerDown}></div>
+        </div>
+    );
 };

@@ -413,10 +413,7 @@ export class Model {
 
     /** @internal */
     findDropTargetNode(_windowId: string, dragNode: Node & IDraggable, x: number, y: number) {
-        let node = (this._root as RowNode).findDropTargetNode(_windowId, dragNode, x, y);
-        if (node === undefined) {
-            node = this.borders.findDropTargetNode(dragNode, x, y);
-        }
+        const node = (this._root as RowNode).findDropTargetNode(_windowId, dragNode, x, y) ?? this.borders.findDropTargetNode(dragNode, x, y);
         return node;
     }
 

@@ -82,13 +82,7 @@ describe("OptimizedLayout", () => {
 
     it("sets pointer-events to none on tab panels during drag", async () => {
         const model = Model.fromJson(jsonModel);
-        await render(
-            <OptimizedLayout
-                model={model}
-                renderTab={(node) => <div data-testid={`content-${node.getId()}`}>Content for {node.getName()}</div>}
-            />,
-            { container },
-        );
+        await render(<OptimizedLayout model={model} renderTab={(node) => <div data-testid={`content-${node.getId()}`}>Content for {node.getName()}</div>} />, { container });
 
         // Wait for layout to render
         await new Promise((resolve) => setTimeout(resolve, 100));

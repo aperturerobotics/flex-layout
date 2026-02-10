@@ -6,12 +6,7 @@ import { BorderNode } from "../model/BorderNode";
 import { Orientation } from "../Orientation";
 
 /** @internal */
-export const useTabOverflow = (
-    node: TabSetNode | BorderNode,
-    orientation: Orientation,
-    toolbarRef: RefObject<HTMLElement | null>,
-    stickyButtonsRef: RefObject<HTMLElement | null>,
-) => {
+export const useTabOverflow = (node: TabSetNode | BorderNode, orientation: Orientation, toolbarRef: RefObject<HTMLElement | null>, stickyButtonsRef: RefObject<HTMLElement | null>) => {
     const firstRender = useRef<boolean>(true);
     const tabsTruncated = useRef<boolean>(false);
     const lastRect = useRef<Rect>(Rect.empty());
@@ -112,12 +107,10 @@ export const useTabOverflow = (
                     // when selected tab is larger than available space then align left
                     if (getSize(selectedRect) + 2 * tabMargin >= endPos - getNear(nodeRect)) {
                         shiftPos = getNear(nodeRect) - selectedStart;
-                        // console.log("shiftPos1", shiftPos, getNear(nodeRect), selectedStart);
                     } else {
                         if (selectedEnd > endPos || selectedStart < getNear(nodeRect)) {
                             if (selectedStart < getNear(nodeRect)) {
                                 shiftPos = getNear(nodeRect) - selectedStart;
-                                // console.log("shiftPos2", shiftPos, getNear(nodeRect), selectedStart);
                             }
                             // use second if statement to prevent tab moving back then forwards if not enough space for single tab
                             if (selectedEnd + shiftPos > endPos) {
@@ -129,7 +122,6 @@ export const useTabOverflow = (
 
                 const extraSpace = Math.max(0, endPos - (getFar(lastChild.getTabRect()) + tabMargin + shiftPos));
                 const newPosition = Math.min(0, position + shiftPos + extraSpace);
-                // console.log("newPosition", newPosition, position, shiftPos, extraSpace);
 
                 // find hidden tabs
                 const diff = newPosition - position;
@@ -145,7 +137,6 @@ export const useTabOverflow = (
 
                 firstRender.current = false; // need to do a second render
                 setHiddenTabs(hidden);
-                // console.log(newPosition);
                 setPosition(newPosition);
             }
         } else {
@@ -154,12 +145,7 @@ export const useTabOverflow = (
     };
 
     const onMouseWheel = (event: WheelEvent<HTMLElement>) => {
-        let delta;
-        if (Math.abs(event.deltaX) > Math.abs(event.deltaY)) {
-            delta = -event.deltaX;
-        } else {
-            delta = -event.deltaY;
-        }
+        let delta = Math.abs(event.deltaX) > Math.abs(event.deltaY) ? -event.deltaX : -event.deltaY;
         if (event.deltaMode === 1) {
             // DOM_DELTA_LINE	0x01	The delta values are specified in lines.
             delta *= 40;

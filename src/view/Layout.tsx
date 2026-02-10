@@ -198,7 +198,6 @@ export class LayoutInternal extends Component<ILayoutInternalProps, ILayoutInter
 
     private dragEnterCount: number = 0;
     private dragging: boolean = false;
-    // private renderCount: any;
 
     constructor(props: ILayoutInternalProps) {
         super(props);
@@ -210,7 +209,6 @@ export class LayoutInternal extends Component<ILayoutInternalProps, ILayoutInter
         this.findBorderBarSizeRef = createRef<HTMLDivElement>();
 
         this.icons = { ...defaultIcons, ...props.icons };
-        // this.renderCount = 0;
 
         this.state = {
             rect: Rect.empty(),
@@ -544,12 +542,8 @@ export class LayoutInternal extends Component<ILayoutInternalProps, ILayoutInter
         const margin = edgeRectWidth;
         const offset = edgeRectLength / 2;
 
-        let overEdge = false;
-        if (this.props.model.isEnableEdgeDock() && this.state.showHiddenBorder === DockLocation.CENTER) {
-            if ((y > c.y - offset && y < c.y + offset) || (x > c.x - offset && x < c.x + offset)) {
-                overEdge = true;
-            }
-        }
+        const overEdge =
+            this.props.model.isEnableEdgeDock() && this.state.showHiddenBorder === DockLocation.CENTER && ((y > c.y - offset && y < c.y + offset) || (x > c.x - offset && x < c.x + offset));
 
         let location = DockLocation.CENTER;
         if (!overEdge) {
@@ -671,14 +665,15 @@ export class LayoutInternal extends Component<ILayoutInternalProps, ILayoutInter
     }
 
     getMoveableElement(id: string) {
-        let moveableElement = this.moveableElementMap.get(id);
-        if (moveableElement === undefined) {
-            moveableElement = document.createElement("div");
-            this.moveablesRef.current!.appendChild(moveableElement);
-            moveableElement.className = CLASSES.FLEXLAYOUT__TAB_MOVEABLE;
-            this.moveableElementMap.set(id, moveableElement);
+        const existing = this.moveableElementMap.get(id);
+        if (existing !== undefined) {
+            return existing;
         }
-        return moveableElement;
+        const element = document.createElement("div");
+        this.moveablesRef.current!.appendChild(element);
+        element.className = CLASSES.FLEXLAYOUT__TAB_MOVEABLE;
+        this.moveableElementMap.set(id, element);
+        return element;
     }
 
     getMainLayout() {
@@ -783,14 +778,11 @@ export class LayoutInternal extends Component<ILayoutInternalProps, ILayoutInter
     }
 
     i18nName(id: I18nLabel, param?: string) {
-        let message;
-        if (this.props.i18nMapper) {
-            message = this.props.i18nMapper(id, param);
+        const message = this.props.i18nMapper?.(id, param);
+        if (message !== undefined) {
+            return message;
         }
-        if (message === undefined) {
-            message = id + (param === undefined ? "" : param);
-        }
-        return message;
+        return id + (param === undefined ? "" : param);
     }
 
     getShowOverflowMenu() {

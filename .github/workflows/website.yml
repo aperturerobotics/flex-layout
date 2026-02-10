@@ -2,7 +2,7 @@ name: Deploy Website
 
 on:
   push:
-    branches: ['master']
+    branches: ["master"]
   workflow_dispatch:
 
 permissions:
@@ -12,7 +12,7 @@ permissions:
 
 # Allow one concurrent deployment
 concurrency:
-  group: 'pages'
+  group: "pages"
   cancel-in-progress: true
 
 jobs:
