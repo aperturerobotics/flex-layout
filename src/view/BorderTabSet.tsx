@@ -32,7 +32,7 @@ export const BorderTabSet = (props: IBorderTabSetProps) => {
 
     // Measure and set the tab header rect after each render
     useLayoutEffect(() => {
-        border.setTabHeaderRect(Rect.getBoundingClientRect(selfRef.current!).relativeTo(layout.getDomRect()));
+        border.setTabHeaderRect(Rect.getRelativeOffsetRect(selfRef.current!, layout.getRootDiv()!));
     });
 
     const { selfRef, position, userControlledLeft, hiddenTabs, onMouseWheel, tabsTruncated } = useTabOverflow(border, Orientation.flip(border.getOrientation()), toolbarRef, stickyButtonsRef);

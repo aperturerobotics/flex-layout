@@ -21,7 +21,7 @@ export function BorderTab(props: IBorderTabProps) {
 
     useLayoutEffect(() => {
         const outerRect = layout.getBoundingClientRect(selfRef.current!);
-        const contentRect = Rect.getContentRect(selfRef.current!).relativeTo(layout.getDomRect());
+        const contentRect = Rect.getRelativeContentRect(selfRef.current!, layout.getRootDiv()!);
         if (outerRect.width > 0) {
             border.setOuterRect(outerRect);
             if (!border.getContentRect().equals(contentRect)) {

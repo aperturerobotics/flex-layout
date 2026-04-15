@@ -38,6 +38,35 @@ export class Rect {
         return new Rect(x, y, width, height);
     }
 
+    static getRelativeOffsetRect(element: HTMLElement, relativeTo: HTMLElement) {
+        let x = relativeTo.clientLeft - relativeTo.scrollLeft;
+        let y = relativeTo.clientTop - relativeTo.scrollTop;
+        let current: HTMLElement | null = element;
+
+        while (current && current !== relativeTo) {
+            x += current.offsetLeft;
+            y += current.offsetTop;
+
+            const offsetParent: Element | null = current.offsetParent;
+            if (offsetParent instanceof HTMLElement) {
+                if (offsetParent !== relativeTo) {
+                    x += offsetParent.clientLeft;
+                    y += offsetParent.clientTop;
+                }
+                x -= offsetParent.scrollLeft;
+                y -= offsetParent.scrollTop;
+            }
+
+            current = offsetParent instanceof HTMLElement ? offsetParent : null;
+        }
+
+        if (current !== relativeTo) {
+            return Rect.getBoundingClientRect(element).relativeTo(relativeTo.getBoundingClientRect());
+        }
+
+        return new Rect(x, y, element.offsetWidth, element.offsetHeight);
+    }
+
     static getContentRect(element: HTMLElement) {
         const rect = element.getBoundingClientRect();
         const style = window.getComputedStyle(element);
@@ -55,6 +84,26 @@ export class Rect {
         const contentHeight = rect.height - borderTopWidth - paddingTop - paddingBottom - borderBottomWidth;
 
         return new Rect(rect.left + borderLeftWidth + paddingLeft, rect.top + borderTopWidth + paddingTop, contentWidth, contentHeight);
+    }
+
+    static getRelativeContentRect(element: HTMLElement, relativeTo: HTMLElement) {
+        const rect = Rect.getRelativeOffsetRect(element, relativeTo);
+        const style = window.getComputedStyle(element);
+
+        const paddingLeft = parseFloat(style.paddingLeft);
+        const paddingRight = parseFloat(style.paddingRight);
+        const paddingTop = parseFloat(style.paddingTop);
+        const paddingBottom = parseFloat(style.paddingBottom);
+
+        const contentWidth = Math.max(0, element.clientWidth - paddingLeft - paddingRight);
+        const contentHeight = Math.max(0, element.clientHeight - paddingTop - paddingBottom);
+
+        return new Rect(
+            rect.x + element.clientLeft + paddingLeft,
+            rect.y + element.clientTop + paddingTop,
+            contentWidth,
+            contentHeight,
+        );
     }
 
     static fromDomRect(domRect: DOMRect) {

@@ -44,7 +44,7 @@ export const TabSet = (props: ITabSetProps) => {
             node.setTabStripRect(layout.getBoundingClientRect(tabStripRef.current));
         }
 
-        const newContentRect = Rect.getContentRect(contentRef.current!).relativeTo(layout.getDomRect());
+        const newContentRect = Rect.getRelativeContentRect(contentRef.current!, layout.getRootDiv()!);
         const oldContentRect = node.getContentRect();
         if (!oldContentRect.equals(newContentRect)) {
             node.setContentRect(newContentRect);

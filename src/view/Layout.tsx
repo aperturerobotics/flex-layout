@@ -653,9 +653,8 @@ export class LayoutInternal extends Component<ILayoutInternalProps, ILayoutInter
     };
 
     getBoundingClientRect(div: HTMLElement): Rect {
-        const layoutRect = this.getDomRect();
-        if (layoutRect) {
-            return Rect.getBoundingClientRect(div).relativeTo(layoutRect);
+        if (this.selfRef.current) {
+            return Rect.getRelativeOffsetRect(div, this.selfRef.current);
         }
         return Rect.empty();
     }

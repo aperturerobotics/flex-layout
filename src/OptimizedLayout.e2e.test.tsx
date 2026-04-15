@@ -24,6 +24,7 @@ const jsonModel: IJsonModel = {
 
 describe("OptimizedLayout", () => {
     let container: HTMLDivElement;
+    let styleElement: HTMLStyleElement | undefined;
 
     beforeEach(() => {
         container = document.createElement("div");
@@ -34,6 +35,8 @@ describe("OptimizedLayout", () => {
     });
 
     afterEach(() => {
+        styleElement?.remove();
+        styleElement = undefined;
         document.body.removeChild(container);
     });
 
@@ -55,6 +58,57 @@ describe("OptimizedLayout", () => {
         // Check that at least one tab panel has position absolute
         const firstPanel = tabPanels[0] as HTMLElement;
         expect(firstPanel.style.position).toBe("absolute");
+    });
+
+    it("fills the layout width when mounted inside a scaled parent", async () => {
+        container.style.transform = "scale(0.5)";
+        container.style.transformOrigin = "top left";
+
+        const model = Model.fromJson(jsonModel);
+        await render(<OptimizedLayout model={model} renderTab={(node) => <div data-testid={`content-${node.getId()}`}>Content for {node.getName()}</div>} />, { container });
+
+        await new Promise((resolve) => setTimeout(resolve, 100));
+
+        const layoutElement = document.querySelector(".flexlayout__layout") as HTMLElement;
+        expect(layoutElement).not.toBeNull();
+
+        const visibleTabPanel = Array.from(document.querySelectorAll('[role="tabpanel"]')).find((panel) => (panel as HTMLElement).style.visibility !== "hidden") as HTMLElement;
+        expect(visibleTabPanel).not.toBeNull();
+
+        const layoutRect = layoutElement.getBoundingClientRect();
+        const panelRect = visibleTabPanel.getBoundingClientRect();
+
+        expect(panelRect.width).toBeGreaterThan(layoutRect.width * 0.9);
+        expect(panelRect.width).toBeLessThan(layoutRect.width + 1);
+    });
+
+    it("positions tab content inside the tabset left border", async () => {
+        styleElement = document.createElement("style");
+        styleElement.textContent = `
+            .flexlayout__tabset {
+                border: 0 solid transparent;
+                border-left-width: 5px;
+            }
+        `;
+        document.head.appendChild(styleElement);
+
+        const model = Model.fromJson(jsonModel);
+        await render(<OptimizedLayout model={model} renderTab={(node) => <div data-testid={`content-${node.getId()}`}>Content for {node.getName()}</div>} />, { container });
+
+        await new Promise((resolve) => setTimeout(resolve, 100));
+
+        const tabset = document.querySelector(".flexlayout__tabset") as HTMLElement;
+        expect(tabset).not.toBeNull();
+
+        const visibleTabPanel = Array.from(document.querySelectorAll('[role="tabpanel"]')).find((panel) => (panel as HTMLElement).style.visibility !== "hidden") as HTMLElement;
+        expect(visibleTabPanel).not.toBeNull();
+
+        const tabsetRect = tabset.getBoundingClientRect();
+        const panelRect = visibleTabPanel.getBoundingClientRect();
+        const borderLeftWidth = parseFloat(window.getComputedStyle(tabset).borderLeftWidth);
+
+        expect(panelRect.left).toBeGreaterThanOrEqual(tabsetRect.left + borderLeftWidth - 0.5);
+        expect(panelRect.left).toBeLessThan(tabsetRect.left + borderLeftWidth + 0.5);
     });
 
     it("shows selected tab and hides others", async () => {
