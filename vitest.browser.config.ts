@@ -1,13 +1,11 @@
 import { defineConfig } from "vitest/config";
 import { playwright } from "@vitest/browser-playwright";
-import react from "@vitejs/plugin-react";
 
 // Check for UI mode via environment variable
 // Set BROWSER_TEST_UI=1 to run tests with visible browser (headless: false)
 const showUI = process.env.BROWSER_TEST_UI === "1";
 
 export default defineConfig({
-    plugins: [react()],
     optimizeDeps: {
         include: ["vitest-browser-react", "@testing-library/jest-dom/vitest", "react", "react-dom/client"],
     },
