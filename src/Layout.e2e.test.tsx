@@ -92,6 +92,36 @@ describe("Layout E2E", () => {
         expect(selectedTabId).toBe("tab2");
     });
 
+    it("ignores wheel scrolling when tabs already fit", async () => {
+        container.style.width = "1600px";
+
+        const model = Model.fromJson(jsonModel);
+        await render(<Layout model={model} factory={(node) => <div data-testid={`content-${node.getId()}`}>Content for {node.getName()}</div>} />, { container });
+
+        await new Promise((resolve) => setTimeout(resolve, 100));
+
+        const tabStrip = document.querySelector(".flexlayout__tabset_tabbar_outer") as HTMLElement;
+        const tabContainer = document.querySelector(".flexlayout__tabset_tabbar_inner_tab_container") as HTMLElement;
+        expect(tabStrip).not.toBeNull();
+        expect(tabContainer).not.toBeNull();
+
+        expect(document.querySelector(".flexlayout__tab_button_overflow")).toBeNull();
+        expect(Math.abs(parseFloat(window.getComputedStyle(tabContainer).left))).toBeLessThanOrEqual(0.5);
+
+        tabStrip.dispatchEvent(
+            new WheelEvent("wheel", {
+                bubbles: true,
+                cancelable: true,
+                deltaY: 120,
+            }),
+        );
+
+        await new Promise((resolve) => setTimeout(resolve, 50));
+
+        expect(document.querySelector(".flexlayout__tab_button_overflow")).toBeNull();
+        expect(Math.abs(parseFloat(window.getComputedStyle(tabContainer).left))).toBeLessThanOrEqual(0.5);
+    });
+
     it("calls onDragStateChange when drag starts and ends", async () => {
         const model = Model.fromJson(jsonModel);
         const dragStates: boolean[] = [];
