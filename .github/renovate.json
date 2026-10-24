@@ -11,14 +11,29 @@
   "branchConcurrentLimit": 0,
   "packageRules": [
     {
-      "matchManagers": ["gomod"],
-      "matchDepTypes": ["replace"],
+      "matchManagers": [
+        "gomod"
+      ],
+      "matchDepTypes": [
+        "replace"
+      ],
       "enabled": false
     },
     {
-      "matchManagers": ["gomod"],
-      "matchDepTypes": ["golang"],
+      "matchManagers": [
+        "gomod"
+      ],
+      "matchDepTypes": [
+        "golang"
+      ],
       "enabled": false
+    },
+    {
+      "description": "typedoc needs the compiler API, which TypeScript 7 does not have",
+      "matchPackageNames": [
+        "typescript"
+      ],
+      "allowedVersions": "<7"
     }
   ]
 }
